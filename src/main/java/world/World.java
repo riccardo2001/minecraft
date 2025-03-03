@@ -7,7 +7,7 @@ public class World {
     private List<Block> blocks = new ArrayList<>();
 
     public World() {
-        blocks.add(new Block(0, 0, 0));
+        //blocks.add(new Block(0, 0, 0));
     }
 
     public void render() {
@@ -15,4 +15,6 @@ public class World {
             block.render();
         }
     }
+
+    
 }

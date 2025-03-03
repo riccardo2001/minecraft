@@ -1,39 +1,40 @@
 # Minecraft Clone - Java OpenGL
 
-Un clone semplice di Minecraft sviluppato in Java utilizzando LWJGL (Lightweight Java Game Library) per il rendering OpenGL.
+A simple Minecraft clone developed in Java using LWJGL (Lightweight Java Game Library) for OpenGL rendering.
 
-## Requisiti
+## Requirements
 
-- **Java 17 o superiore** (non compatibile con versioni precedenti)
+- **Java 17** (not compatible with earlier versions)
 - LWJGL 3.x
-- IDE compatibile con Java (Eclipse, IntelliJ IDEA, VS Code con estensioni appropriate)
+- Java-compatible IDE VScode
+- OS compatible with macOS arm64
 
-## Funzionalità
+## Features
 
-- Rendering di blocchi 3D
-- Movimento della camera con i tasti WASD
-- Sistema di illuminazione semplice
-- Rendering dello sfondo
+- 3D block rendering
+- Camera movement using WASD keys
+- Simple lighting system
+- Background rendering
 
-## Struttura del progetto
+## Project Structure
 
-Il progetto è organizzato nei seguenti pacchetti:
+The project is organized in the following packages:
 
-- `core`: Contiene le classi principali come `Game` e `Window`
-- `graphics`: Contiene la classe `Camera` per gestire la visuale
-- `world`: Contiene la classe `Block` per la renderizzazione dei blocchi
-- `input`: Contiene l'`InputHandler` per gestire gli input da tastiera
+- `core`: Contains main classes like `Game` and `Window`
+- `graphics`: Contains the `Camera` class to manage the view
+- `world`: Contains the `Block` class for block rendering
+- `input`: Contains the `InputHandler` to manage keyboard inputs
 
-## Installazione
+## Installation
 
-1. Clona il repository
+1. Clone the repository
 ```bash
-git clone https://github.com/username/minecraft-clone.git
+git clone https://github.com/riccardo2001/minecraft.git
 ```
 
-2. Importa il progetto nel tuo IDE
+2. Import the project into your IDE
 
-3. Assicurati di avere le dipendenze LWJGL nel tuo classpath. Se usi Maven, aggiungi al tuo `pom.xml`:
+3. Make sure you have LWJGL dependencies in your classpath. If using Maven, add to your `pom.xml`:
 
 ```xml
 <dependencies>
@@ -52,31 +53,31 @@ git clone https://github.com/username/minecraft-clone.git
         <artifactId>lwjgl-glfw</artifactId>
         <version>3.3.2</version>
     </dependency>
-    <!-- Nativi per il tuo sistema operativo -->
+    <!-- Natives for your operating system -->
     <dependency>
         <groupId>org.lwjgl</groupId>
         <artifactId>lwjgl</artifactId>
         <version>3.3.2</version>
-        <classifier>natives-windows</classifier> <!-- cambia in base al tuo OS -->
+        <classifier>natives-windows</classifier> <!-- change based on your OS -->
     </dependency>
     <dependency>
         <groupId>org.lwjgl</groupId>
         <artifactId>lwjgl-opengl</artifactId>
         <version>3.3.2</version>
-        <classifier>natives-windows</classifier> <!-- cambia in base al tuo OS -->
+        <classifier>natives-windows</classifier> <!-- change based on your OS -->
     </dependency>
     <dependency>
         <groupId>org.lwjgl</groupId>
         <artifactId>lwjgl-glfw</artifactId>
         <version>3.3.2</version>
-        <classifier>natives-windows</classifier> <!-- cambia in base al tuo OS -->
+        <classifier>natives-windows</classifier> <!-- change based on your OS -->
     </dependency>
 </dependencies>
 ```
 
-## Avvio
+## Starting the Game
 
-Esegui la classe `Main` (nel pacchetto principale) per avviare il gioco.
+Run the `Main` class (in the main package) to start the game.
 
 ```java
 public class Main {
@@ -87,29 +88,29 @@ public class Main {
 }
 ```
 
-## Controlli
+## Controls
 
-- `W`: Muovi avanti
-- `S`: Muovi indietro
-- `A`: Muovi a sinistra
-- `D`: Muovi a destra
+- `W`: Move forward
+- `S`: Move backward
+- `A`: Move left
+- `D`: Move right
 
-## ⚠️ Attenzione
+## ⚠️ Warning
 
-**Questo progetto richiede Java 17 o superiore.** Non è compatibile con versioni precedenti a causa dell'utilizzo di funzionalità moderne di Java e librerie che richiedono Java 17+.
+**This project requires Java 17.** It is not compatible with earlier or later versions due to the use of modern Java features and libraries that require Java 17.
 
-## Estensioni Previste
+## Planned Extensions
 
-- Sistema di generazione procedurale del terreno
-- Fisica di base (gravità, collisioni)
-- Texture per i blocchi
-- Sistema di inventario
+- Procedural terrain generation system
+- Basic physics (gravity, collisions)
+- Textures for blocks
+- Inventory system
 - Crafting
 
-## Contribuire
+## Contributing
 
-1. Fai un fork del repository
-2. Crea un branch per la tua feature (`git checkout -b feature/nome-feature`)
-3. Commit delle tue modifiche (`git commit -am 'Aggiungi una nuova feature'`)
-4. Push al branch (`git push origin feature/nome-feature`)
-5. Apri una Pull Request
+1. Fork the repository
+2. Create a branch for your feature (`git checkout -b feature/feature-name`)
+3. Commit your changes (`git commit -am 'Add a new feature'`)
+4. Push to the branch (`git push origin feature/feature-name`)
+5. Open a Pull Request

@@ -16,6 +16,7 @@ public class Window {
     private Callable<Void> resizeFunc;
     private int width;
     private MouseInput mouseInput;
+    private String title;
 
     public static class WindowOptions {
         public boolean compatibleProfile;
@@ -27,6 +28,7 @@ public class Window {
 
     public Window(String title, WindowOptions opts, Callable<Void> resizeFunc) {
         this.resizeFunc = resizeFunc;
+        this.title = title;
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
         }
@@ -146,5 +148,10 @@ public class Window {
 
     public MouseInput getMouseInput() {
         return mouseInput;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+        glfwSetWindowTitle(windowHandle, title);
     }
 }

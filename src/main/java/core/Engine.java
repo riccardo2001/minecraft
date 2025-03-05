@@ -45,6 +45,11 @@ public class Engine {
         float deltaUpdate = 0;
         float deltaFps = 0;
 
+        // Aggiungi queste variabili per il conteggio degli FPS
+        int fps = 0;
+        int fpsCount = 0;
+        long fpsTime = System.currentTimeMillis();
+
         long updateTime = initialTime;
         while (running && !window.windowShouldClose()) {
             window.pollEvents();
@@ -69,8 +74,21 @@ public class Engine {
                 render.render(window, scene);
                 deltaFps--;
                 window.update();
+
+                // Incrementa il contatore dei frame
+                fpsCount++;
+
+                // Aggiorna il valore degli FPS ogni secondo
+                if (now - fpsTime >= 1000) {
+                    fps = fpsCount;
+                    fpsCount = 0;
+                    fpsTime = now;
+                }
             }
             initialTime = now;
+
+            String baseTitle = "Minecraft ";
+            window.setTitle(baseTitle + " | FPS: " + fps);
         }
 
         cleanup();

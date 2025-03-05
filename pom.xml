@@ -14,6 +14,8 @@
     </properties>
 
     <dependencies>
+
+        <!-- Librerie lwjgl -->
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl</artifactId>
@@ -32,7 +34,13 @@
             <version>3.3.2</version>
         </dependency>
 
-        <!-- Librerie native per ARM64 -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-stb</artifactId>
+            <version>3.3.2</version>
+        </dependency>
+
+        <!-- Librerie lwjgl native per ARM64 -->
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl</artifactId>
@@ -52,6 +60,21 @@
             <artifactId>lwjgl-glfw</artifactId>
             <version>3.3.2</version>
             <classifier>natives-macos-arm64</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-stb</artifactId>
+            <version>3.3.2</version>
+            <classifier>natives-macos-arm64</classifier>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Librerie Prospective -->
+        <dependency>
+            <groupId>org.joml</groupId>
+            <artifactId>joml</artifactId>
+            <version>1.10.8</version>
         </dependency>
 
     </dependencies>

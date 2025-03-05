@@ -1,85 +1,130 @@
 package world;
 
+import scene.Scene;
+
 public class Chunk {
-    public static final int CHUNK_SIZE = 16; // Typical Minecraft chunk size (16x16x16)
+    // Dimensioni costanti del chunk
+    public static final int WIDTH = 16;
+    public static final int HEIGHT = 256;
+    public static final int DEPTH = 16;
+
+    // Posizione del chunk nel mondo
+    private final int chunkX;
+    private final int chunkZ;
+
+    // Matrice 3D per memorizzare i blocchi
     private Block[][][] blocks;
-    public int chunkX; // Chunk position in the world (in chunk coordinates)
-    private int chunkY;
-    private int chunkZ;
 
-    public Chunk(int chunkX, int chunkY, int chunkZ) {
+    // Riferimento alla scena
+    private Scene scene;
+
+    // Flag per tracciare modifiche al chunk
+    private boolean isDirty;
+
+    public Chunk(int chunkX, int chunkZ, Scene scene) {
         this.chunkX = chunkX;
-        this.chunkY = chunkY;
         this.chunkZ = chunkZ;
-        this.blocks = new Block[CHUNK_SIZE][CHUNK_SIZE][CHUNK_SIZE];
+        this.scene = scene;
+        this.blocks = new Block[WIDTH][HEIGHT][DEPTH];
+        this.isDirty = true;
+        System.out.println("Generating Chunk at: " + chunkX + ", " + chunkZ);
+
+        // Genera il chunk di default
+        generateInitialTerrain();
+        printChunkBlocks();
     }
 
-    public void setBlock(int x, int y, int z, Block block) {
-        if (x >= 0 && x < CHUNK_SIZE && y >= 0 && y < CHUNK_SIZE && z >= 0 && z < CHUNK_SIZE) {
-            blocks[x][y][z] = block;
-        }
-    }
+    private void generateInitialTerrain() {
+        for (int x = 0; x < WIDTH; x++) {
+            for (int z = 0; z < DEPTH; z++) {
+                int terrainHeight = calculateTerrainHeight(x, z);
 
-    public Block getBlock(int x, int y, int z) {
-        if (x >= 0 && x < CHUNK_SIZE && y >= 0 && y < CHUNK_SIZE && z >= 0 && z < CHUNK_SIZE) {
-            return blocks[x][y][z];
-        }
-        return null;
-    }
+                for (int y = 0; y < HEIGHT; y++) {
+                    Block.BlockType blockType = determineBlockType(x, y, z, terrainHeight);
 
-    public void render() {
-        for (int x = 0; x < CHUNK_SIZE; x++) {
-            for (int y = 0; y < CHUNK_SIZE; y++) {
-                for (int z = 0; z < CHUNK_SIZE; z++) {
-                    if (blocks[x][y][z] != null) {
-                        // Calculate world position
-                        float worldX = (chunkX * CHUNK_SIZE) + x;
-                        float worldY = (chunkY * CHUNK_SIZE) + y;
-                        float worldZ = (chunkZ * CHUNK_SIZE) + z;
+                    if (blockType != Block.BlockType.AIR) {
+                        float worldX = (chunkX * WIDTH + x) * Block.BLOCK_SIZE;
+                        float worldY = y * Block.BLOCK_SIZE;
+                        float worldZ = (chunkZ * DEPTH + z) * Block.BLOCK_SIZE;
 
-                        // Render the block at the world position
-                        blocks[x][y][z].render(worldX, worldY, worldZ);
+                        Block block = new Block(scene, blockType, Block.getTexturePathForBlockType(blockType));
+                        block.setWorldPosition(worldX, worldY, worldZ);
+
+                        setBlock(x, y, z, block);
                     }
                 }
             }
         }
     }
 
-    // Convert world coordinates to chunk coordinates
-    public static int worldToChunk(float worldCoord) {
-        return Math.floorDiv((int) worldCoord, CHUNK_SIZE);
+    public void printChunkBlocks() {
+        for (int x = 0; x < WIDTH; x++) {
+            for (int y = 0; y < HEIGHT; y++) {
+                for (int z = 0; z < DEPTH; z++) {
+                    if (blocks[x][y][z] != null) {
+                        System.out.println("Block at: x=" + x + ", y=" + y + ", z=" + z +
+                                ", Type=" + blocks[x][y][z].getType());
+                    }
+                }
+            }
+        }
     }
 
-    public Block[][][] getBlocks() {
-        return this.blocks;
+    private int calculateTerrainHeight(int localX, int localZ) {
+        double noise1 = Math.sin(localX * 0.1) * 10;
+        double noise2 = Math.cos(localZ * 0.2) * 8;
+        double noise3 = Math.sin(localX * 0.05 + localZ * 0.05) * 15;
+
+        //return 64 + (int) (noise1 + noise2 + noise3);
+        return 4;
     }
 
-    public void setBlocks(Block[][][] blocks) {
-        this.blocks = blocks;
+    private Block.BlockType determineBlockType(int x, int y, int z, int terrainHeight) {
+        // Bedrock al fondo
+        if (y == 0)
+            return Block.BlockType.STONE;
+
+        // Strati del terreno
+        if (y < terrainHeight - 3)
+            return Block.BlockType.STONE; // Pietra profonda
+        if (y < terrainHeight - 1)
+            return Block.BlockType.STONE; // Pietra vicino alla superficie
+        if (y < terrainHeight)
+            return Block.BlockType.GRASS; // Erba in superficie
+
+        return Block.BlockType.AIR;
+    }
+
+    public void setBlock(int x, int y, int z, Block block) {
+        if (isValidPosition(x, y, z)) {
+            blocks[x][y][z] = block;
+            isDirty = true;
+        }
+    }
+
+    public Block getBlock(int x, int y, int z) {
+        return isValidPosition(x, y, z) ? blocks[x][y][z] : null;
+    }
+
+    private boolean isValidPosition(int x, int y, int z) {
+        return x >= 0 && x < WIDTH &&
+                y >= 0 && y < HEIGHT &&
+                z >= 0 && z < DEPTH;
+    }
+
+    public boolean isDirty() {
+        return isDirty;
+    }
+
+    public void resetDirtyFlag() {
+        isDirty = false;
     }
 
     public int getChunkX() {
-        return this.chunkX;
-    }
-
-    public void setChunkX(int chunkX) {
-        this.chunkX = chunkX;
-    }
-
-    public int getChunkY() {
-        return this.chunkY;
-    }
-
-    public void setChunkY(int chunkY) {
-        this.chunkY = chunkY;
+        return chunkX;
     }
 
     public int getChunkZ() {
-        return this.chunkZ;
+        return chunkZ;
     }
-
-    public void setChunkZ(int chunkZ) {
-        this.chunkZ = chunkZ;
-    }
-
 }

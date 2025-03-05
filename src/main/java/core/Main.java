@@ -22,7 +22,7 @@ public class Main implements IAppLogic {
 
     public static void main(String[] args) {
         Main main = new Main();
-        Engine gameEng = new Engine("chapter-04", new Window.WindowOptions(), main);
+        Engine gameEng = new Engine("Minecraft ", new Window.WindowOptions(), main);
         gameEng.start();
     }
 
@@ -35,10 +35,7 @@ public class Main implements IAppLogic {
     public void init(Window window, Scene scene, Render render) {
         world = new World(scene);
 
-        world.generateInitialWorld(0, 0);
-
-        world.getLoadedChunks();
-        
+        world.generateInitialWorld(0, 0);        
 
         System.out.println("World generated");
     }

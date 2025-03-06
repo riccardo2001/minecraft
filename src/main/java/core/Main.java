@@ -10,6 +10,7 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
 import org.joml.Vector2f;
 
 import graphics.Render;
+import graphics.TextureCacheAtlas;
 import scene.Camera;
 import scene.Scene;
 import world.World;
@@ -19,6 +20,7 @@ public class Main implements IAppLogic {
     private static final float MOUSE_SENSITIVITY = 0.1f;
     private static final float MOVEMENT_SPEED = 0.005f;
     private World world;
+    private TextureCacheAtlas textureCache;
 
     public static void main(String[] args) {
         Main main = new Main();
@@ -33,10 +35,12 @@ public class Main implements IAppLogic {
 
     @Override
     public void init(Window window, Scene scene, Render render) {
-        world = new World(scene);
+        textureCache = new TextureCacheAtlas("textures/atlas.png", 256, 16);
+        world = new World(scene, textureCache);
 
         world.generateInitialWorld(0, 0);
-
+        scene.setWorld(world);
+        scene.getCamera().setPosition(10f, 70f, 10f);
         System.out.println("World generated");
     }
 
@@ -68,16 +72,11 @@ public class Main implements IAppLogic {
 
     @Override
     public void update(Window window, Scene scene, long diffTimeMillis) {
-        // Ottieni la posizione attuale del giocatore dalla telecamera
         Camera camera = scene.getCamera();
         float playerX = camera.getPosition().x;
         float playerZ = camera.getPosition().z;
 
-        // Chiama la funzione per aggiornare la generazione del mondo
         world.updateWorldGeneration(playerX, playerZ);
-
-        // Altri aggiornamenti del gioco possono andare qui (ad esempio movimento,
-        // collisioni, etc.)
     }
 
 }

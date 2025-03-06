@@ -12,6 +12,7 @@ import graphics.ShaderProgram;
 import graphics.Texture;
 import graphics.TextureCache;
 import graphics.UniformsMap;
+import world.Block;
 
 import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
@@ -74,9 +75,12 @@ public class SceneRender {
 
                     // Batching: disegna tutte le entità con lo stesso materiale
                     for (Entity entity : entities) {
-                        entity.updateModelMatrix();
-                        uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
-                        glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+                        if (Block.isBlockVisible(scene, entity)) {
+                            entity.updateModelMatrix();
+                            uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
+                            glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+                        }
+
                     }
                     glBindVertexArray(0);
                 }
@@ -93,4 +97,5 @@ public class SceneRender {
         uniformsMap.createUniform("txtSampler");
         uniformsMap.createUniform("viewMatrix");
     }
+
 }

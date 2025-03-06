@@ -11,6 +11,7 @@ public class Camera {
     private Vector2f rotation;
     private Vector3f up;
     private Matrix4f viewMatrix;
+    private Frustum frustum;
 
     public Camera() {
         direction = new Vector3f();
@@ -19,16 +20,17 @@ public class Camera {
         position = new Vector3f();
         viewMatrix = new Matrix4f();
         rotation = new Vector2f();
+
     }
 
     public void addRotation(float x, float y) {
         // Limita la rotazione verticale (pitch)
-        rotation.y += x;  // Yaw (orizzontale)
-        rotation.x += y;  // Pitch (verticale)
-        
+        rotation.y += x; // Yaw (orizzontale)
+        rotation.x += y; // Pitch (verticale)
+
         // Opzionale: limita la rotazione verticale per evitare capovolgimenti
         rotation.x = Math.max(-90, Math.min(90, rotation.x));
-        
+
         recalculate();
     }
 
@@ -91,5 +93,15 @@ public class Camera {
     public void setRotation(float x, float y) {
         rotation.set(x, y);
         recalculate();
+    }
+
+    public Frustum getFrustum() {
+        // Calcola o aggiorna il frustum se necessario
+        if (frustum == null) {
+            frustum = new Frustum();
+        }
+        // Aggiorna il frustum in base alla posizione e orientamento della camera
+        //frustum.update(getViewMatrix(), projecgetProjectionMatrix());
+        return frustum;
     }
 }

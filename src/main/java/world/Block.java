@@ -187,11 +187,11 @@ public class Block {
     public static String getTexturePathForBlockType(Block.BlockType blockType) {
         switch (blockType) {
             case GRASS:
-                return "resources/textures/grass.png";
+                return "textures/grass.png";
             case STONE:
-                return "resources/textures/grass.png";
+                return "textures/grass.png";
             default:
-                return "resources/textures/grass.png";
+                return "textures/grass.png";
         }
     }
 }

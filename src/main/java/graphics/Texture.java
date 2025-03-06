@@ -1,9 +1,27 @@
 package graphics;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryStack;
 
+import core.Main;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.*;
 
+import static org.lwjgl.opengl.GL11.GL_NEAREST;
+import static org.lwjgl.opengl.GL11.GL_RGBA;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
+import static org.lwjgl.opengl.GL11.GL_UNPACK_ALIGNMENT;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glDeleteTextures;
+import static org.lwjgl.opengl.GL11.glGenTextures;
+import static org.lwjgl.opengl.GL11.glPixelStorei;
+import static org.lwjgl.opengl.GL11.glTexImage2D;
+import static org.lwjgl.opengl.GL11.glTexParameteri;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.stb.STBImage.*;
 
@@ -19,14 +37,34 @@ public class Texture {
 
     public Texture(String texturePath) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            this.texturePath = texturePath;
+            InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(texturePath);
+            if (inputStream == null) {
+                throw new RuntimeException("Texture not found: " + texturePath);
+            }
+
+            ByteBuffer imageBuffer;
+            try {
+                byte[] imageBytes = inputStream.readAllBytes();
+                imageBuffer = BufferUtils.createByteBuffer(imageBytes.length);
+                imageBuffer.put(imageBytes);
+                imageBuffer.flip();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read texture: " + texturePath, e);
+            }
+
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);
             IntBuffer channels = stack.mallocInt(1);
 
-            ByteBuffer buf = stbi_load(texturePath, w, h, channels, 4);
+            ByteBuffer buf = stbi_load_from_memory(
+                    imageBuffer,
+                    w,
+                    h,
+                    channels,
+                    4);
+
             if (buf == null) {
-                throw new RuntimeException("Image file [" + texturePath + "] not loaded: " + stbi_failure_reason());
+                throw new RuntimeException("Failed to load texture: " + stbi_failure_reason());
             }
 
             int width = w.get();

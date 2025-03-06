@@ -125,6 +125,12 @@ public static void main(String[] args) {
 }
 ```
 
+## Java prompt starting
+```bash
+/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java -XstartOnFirstThread -jar minecraft-1.0.jar
+```
+
+
 ## Controls
 
 - `W`: Move forward

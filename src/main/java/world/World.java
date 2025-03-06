@@ -9,7 +9,7 @@ import scene.Scene;
 public class World {
     private Scene scene;
     private Map<ChunkPosition, Chunk> loadedChunks;
-    private int renderDistance = 4; // Chunk da caricare intorno al giocatore
+    private int renderDistance = 2; // Chunk da caricare intorno al giocatore
 
     public World(Scene scene) {
         this.scene = scene;

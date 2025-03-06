@@ -12,22 +12,25 @@ A simple Minecraft clone developed in Java using LWJGL (Lightweight Java Game Li
 ## Features
 
 - 3D block rendering
-- Camera movement using WASD keys
-- Simple lighting system
+- Camera movement using WASD keys and more
+- Texture support
 - Background rendering
+- Chunk handling
+- World generation
 
 ## Project Structure
 
 The project is organized in the following packages:
 
-- `core`: Contains main classes like `Game` and `Window`
-- `graphics`: Contains the `Camera` class to manage the view
-- `world`: Contains the `Block` class for block rendering
-- `input`: Contains the `InputHandler` to manage keyboard inputs
+- `core`: Contains main classes like `Engine` and `Window`
+- `graphics`: Contains the `Render` class to manage the view
+- `world`: Contains the `World` class for block rendering
+- `scene`: Contains the `Camera` to manage looking around
 
 ## Installation
 
 1. Clone the repository
+
 ```bash
 git clone https://github.com/riccardo2001/minecraft.git
 ```
@@ -37,42 +40,77 @@ git clone https://github.com/riccardo2001/minecraft.git
 3. Make sure you have LWJGL dependencies in your classpath. If using Maven, add to your `pom.xml`:
 
 ```xml
-<dependencies>
-    <dependency>
-        <groupId>org.lwjgl</groupId>
-        <artifactId>lwjgl</artifactId>
-        <version>3.3.2</version>
-    </dependency>
-    <dependency>
-        <groupId>org.lwjgl</groupId>
-        <artifactId>lwjgl-opengl</artifactId>
-        <version>3.3.2</version>
-    </dependency>
-    <dependency>
-        <groupId>org.lwjgl</groupId>
-        <artifactId>lwjgl-glfw</artifactId>
-        <version>3.3.2</version>
-    </dependency>
-    <!-- Natives for your operating system -->
-    <dependency>
-        <groupId>org.lwjgl</groupId>
-        <artifactId>lwjgl</artifactId>
-        <version>3.3.2</version>
-        <classifier>natives-windows</classifier> <!-- change based on your OS -->
-    </dependency>
-    <dependency>
-        <groupId>org.lwjgl</groupId>
-        <artifactId>lwjgl-opengl</artifactId>
-        <version>3.3.2</version>
-        <classifier>natives-windows</classifier> <!-- change based on your OS -->
-    </dependency>
-    <dependency>
-        <groupId>org.lwjgl</groupId>
-        <artifactId>lwjgl-glfw</artifactId>
-        <version>3.3.2</version>
-        <classifier>natives-windows</classifier> <!-- change based on your OS -->
-    </dependency>
-</dependencies>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <lwjgl.version>3.3.2</lwjgl.version>
+        <joml.version>1.10.8</joml.version>
+        <native.classifier>natives-macos-arm64</native.classifier>
+    </properties>
+
+    <dependencies>
+        <!-- Library LWJGL -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl</artifactId>
+            <version>${lwjgl.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-opengl</artifactId>
+            <version>${lwjgl.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-glfw</artifactId>
+            <version>${lwjgl.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-stb</artifactId>
+            <version>${lwjgl.version}</version>
+        </dependency>
+
+        <!-- Library native per ARM64 -->
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl</artifactId>
+            <version>${lwjgl.version}</version>
+            <classifier>${native.classifier}</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-opengl</artifactId>
+            <version>${lwjgl.version}</version>
+            <classifier>${native.classifier}</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-glfw</artifactId>
+            <version>${lwjgl.version}</version>
+            <classifier>${native.classifier}</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.lwjgl</groupId>
+            <artifactId>lwjgl-stb</artifactId>
+            <version>${lwjgl.version}</version>
+            <classifier>${native.classifier}</classifier>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Libreria JOML -->
+        <dependency>
+            <groupId>org.joml</groupId>
+            <artifactId>joml</artifactId>
+            <version>1.10.8</version>
+        </dependency>
+
+    </dependencies>
 ```
 
 ## Starting the Game
@@ -80,11 +118,10 @@ git clone https://github.com/riccardo2001/minecraft.git
 Run the `Main` class (in the main package) to start the game.
 
 ```java
-public class Main {
-    public static void main(String[] args) {
-        Game game = new Game();
-        game.run();
-    }
+public static void main(String[] args) {
+    Main main = new Main();
+    Engine gameEng = new Engine("Minecraft ", new Window.WindowOptions(), main);
+    gameEng.start();
 }
 ```
 
@@ -94,6 +131,10 @@ public class Main {
 - `S`: Move backward
 - `A`: Move left
 - `D`: Move right
+- `L-CTRL`: Move down
+- `SPACE`: Move up
+- `MOUSE`: look around
+
 
 ## ⚠️ Warning
 
@@ -101,9 +142,8 @@ public class Main {
 
 ## Planned Extensions
 
-- Procedural terrain generation system
+- Fps optimization
 - Basic physics (gravity, collisions)
-- Textures for blocks
 - Inventory system
 - Crafting
 

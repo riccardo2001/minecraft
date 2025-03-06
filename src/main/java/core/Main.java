@@ -35,13 +35,13 @@ public class Main implements IAppLogic {
     public void init(Window window, Scene scene, Render render) {
         world = new World(scene);
 
-        world.generateInitialWorld(0, 0);        
+        world.generateInitialWorld(0, 0);
 
         System.out.println("World generated");
     }
 
     @Override
-    public void input(Window window, Scene scene, long diffTimeMillis) {
+    public void input(Window window, Scene scene, float diffTimeMillis) {
         float move = diffTimeMillis * MOVEMENT_SPEED;
         Camera camera = scene.getCamera();
         if (window.isKeyPressed(GLFW_KEY_W)) {
@@ -68,6 +68,16 @@ public class Main implements IAppLogic {
 
     @Override
     public void update(Window window, Scene scene, long diffTimeMillis) {
-        
+        // Ottieni la posizione attuale del giocatore dalla telecamera
+        Camera camera = scene.getCamera();
+        float playerX = camera.getPosition().x;
+        float playerZ = camera.getPosition().z;
+
+        // Chiama la funzione per aggiornare la generazione del mondo
+        world.updateWorldGeneration(playerX, playerZ);
+
+        // Altri aggiornamenti del gioco possono andare qui (ad esempio movimento,
+        // collisioni, etc.)
     }
+
 }

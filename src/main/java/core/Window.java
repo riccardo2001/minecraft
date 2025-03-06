@@ -154,4 +154,8 @@ public class Window {
         this.title = title;
         glfwSetWindowTitle(windowHandle, title);
     }
+
+    public String getTitle() {
+        return title;
+    }
 }

@@ -9,68 +9,68 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <lwjgl.version>3.3.2</lwjgl.version>
+        <joml.version>1.10.8</joml.version>
+        <native.classifier>natives-macos-arm64</native.classifier>
     </properties>
 
     <dependencies>
-
-        <!-- Librerie lwjgl -->
+        <!-- Library LWJGL -->
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl</artifactId>
-            <version>3.3.2</version>
+            <version>${lwjgl.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-opengl</artifactId>
-            <version>3.3.2</version>
+            <version>${lwjgl.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-glfw</artifactId>
-            <version>3.3.2</version>
+            <version>${lwjgl.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-stb</artifactId>
-            <version>3.3.2</version>
+            <version>${lwjgl.version}</version>
         </dependency>
 
-        <!-- Librerie lwjgl native per ARM64 -->
+        <!-- Library native per ARM64 -->
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl</artifactId>
-            <version>3.3.2</version>
-            <classifier>natives-macos-arm64</classifier>
+            <version>${lwjgl.version}</version>
+            <classifier>${native.classifier}</classifier>
         </dependency>
 
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-opengl</artifactId>
-            <version>3.3.2</version>
-            <classifier>natives-macos-arm64</classifier>
+            <version>${lwjgl.version}</version>
+            <classifier>${native.classifier}</classifier>
         </dependency>
 
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-glfw</artifactId>
-            <version>3.3.2</version>
-            <classifier>natives-macos-arm64</classifier>
+            <version>${lwjgl.version}</version>
+            <classifier>${native.classifier}</classifier>
         </dependency>
 
         <dependency>
             <groupId>org.lwjgl</groupId>
             <artifactId>lwjgl-stb</artifactId>
-            <version>3.3.2</version>
-            <classifier>natives-macos-arm64</classifier>
+            <version>${lwjgl.version}</version>
+            <classifier>${native.classifier}</classifier>
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Librerie Prospective -->
+        <!-- Libreria JOML -->
         <dependency>
             <groupId>org.joml</groupId>
             <artifactId>joml</artifactId>

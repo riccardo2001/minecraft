@@ -39,32 +39,32 @@ public class Engine {
     }
 
     private void run() {
-        long initialTime = System.currentTimeMillis();
-        float timeU = 1000.0f / targetUps;
-        float timeR = targetFps > 0 ? 1000.0f / targetFps : 0;
+        long initialTime = System.nanoTime(); // Usa nanoTime per la precisione in nanosecondi
+        float timeU = 1e9f / targetUps; // Tempo per aggiornamento in nanosecondi
+        float timeR = targetFps > 0 ? 1e9f / targetFps : 0; // Tempo per frame in nanosecondi
         float deltaUpdate = 0;
         float deltaFps = 0;
 
-        // Aggiungi queste variabili per il conteggio degli FPS
         int fps = 0;
         int fpsCount = 0;
-        long fpsTime = System.currentTimeMillis();
+        long fpsTime = System.nanoTime(); // Usa nanoTime per il conteggio degli FPS
 
         long updateTime = initialTime;
         while (running && !window.windowShouldClose()) {
             window.pollEvents();
 
-            long now = System.currentTimeMillis();
-            deltaUpdate += (now - initialTime) / timeU;
-            deltaFps += (now - initialTime) / timeR;
+            long now = System.nanoTime(); // Ottieni il tempo corrente in nanosecondi
+            long deltaTime = now - initialTime; // Differenza di tempo in nanosecondi
+            deltaUpdate += deltaTime / timeU; // Calcola deltaUpdate
+            deltaFps += deltaTime / timeR; // Calcola deltaFps
 
             if (targetFps <= 0 || deltaFps >= 1) {
                 window.getMouseInput().input();
-                appLogic.input(window, scene, now - initialTime);
+                appLogic.input(window, scene, deltaTime / 1e6f); // Converti in millisecondi per l'input
             }
 
             if (deltaUpdate >= 1) {
-                long diffTimeMillis = now - updateTime;
+                long diffTimeMillis = (now - updateTime) / 1000000L; // Calcola la differenza in millisecondi
                 appLogic.update(window, scene, diffTimeMillis);
                 updateTime = now;
                 deltaUpdate--;
@@ -72,14 +72,13 @@ public class Engine {
 
             if (targetFps <= 0 || deltaFps >= 1) {
                 render.render(window, scene);
-                deltaFps--;
                 window.update();
 
                 // Incrementa il contatore dei frame
                 fpsCount++;
 
                 // Aggiorna il valore degli FPS ogni secondo
-                if (now - fpsTime >= 1000) {
+                if (now - fpsTime >= 1e9) { // 1 secondo in nanosecondi
                     fps = fpsCount;
                     fpsCount = 0;
                     fpsTime = now;

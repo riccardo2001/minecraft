@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import core.Window;
 import graphics.Material;
 import graphics.Mesh;
 import graphics.Model;
@@ -12,9 +13,13 @@ import graphics.Texture;
 import graphics.TextureCache;
 import graphics.UniformsMap;
 
+import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
+import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
 import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
 import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
+import static org.lwjgl.opengl.GL11.glClear;
 import static org.lwjgl.opengl.GL11.glDrawElements;
+import static org.lwjgl.opengl.GL11.glViewport;
 import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
 import static org.lwjgl.opengl.GL13.glActiveTexture;
 import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
@@ -39,15 +44,21 @@ public class SceneRender {
         shaderProgram.cleanup();
     }
 
-    public void render(Scene scene) {
+    public void render(Window window, Scene scene) {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, window.getWidth(), window.getHeight());
+
         shaderProgram.bind();
 
+        // Imposta le matrici uniform
         uniformsMap.setUniform("projectionMatrix", scene.getProjection().getProjMatrix());
         uniformsMap.setUniform("viewMatrix", scene.getCamera().getViewMatrix());
         uniformsMap.setUniform("txtSampler", 0);
 
-        Collection<Model> models = scene.getModelMap().values();
         TextureCache textureCache = scene.getTextureCache();
+        Collection<Model> models = scene.getModelMap().values();
+
+        // Riduci il numero di cambi di texture
         for (Model model : models) {
             List<Entity> entities = model.getEntitiesList();
 
@@ -56,11 +67,14 @@ public class SceneRender {
                 glActiveTexture(GL_TEXTURE0);
                 texture.bind();
 
-                for (Mesh mesh : material.getMeshList()) {
+                // Gruppo le entità per modello e materiale
+                List<Mesh> meshes = material.getMeshList();
+                for (Mesh mesh : meshes) {
                     glBindVertexArray(mesh.getVaoId());
+
+                    // Batching: disegna tutte le entità con lo stesso materiale
                     for (Entity entity : entities) {
                         entity.updateModelMatrix();
-
                         uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
                         glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
                     }

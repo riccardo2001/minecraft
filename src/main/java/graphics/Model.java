@@ -2,11 +2,9 @@ package graphics;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import scene.Entity;
 
 public class Model {
-
     private final String id;
     private List<Entity> entitiesList;
     private List<Mesh> meshList;
@@ -25,16 +23,7 @@ public class Model {
         return id;
     }
 
-    public void setEntitiesList(List<Entity> entitiesList) {
-        this.entitiesList = entitiesList;
-    }
-
     public List<Mesh> getMeshList() {
-        return this.meshList;
+        return meshList;
     }
-
-    public void setMeshList(List<Mesh> meshList) {
-        this.meshList = meshList;
-    }
-
 }

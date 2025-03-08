@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class World {
     private Map<ChunkPosition, Chunk> loadedChunks;
-    private int renderDistance = 2;
+    private int renderDistance = 1;
 
     public World() {
         this.loadedChunks = new HashMap<>();

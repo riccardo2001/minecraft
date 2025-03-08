@@ -130,6 +130,11 @@ public static void main(String[] args) {
 /Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java -XstartOnFirstThread -jar minecraft-1.0.jar
 ```
 
+## Bash command for class union
+```bash
+find ~/minecraft/src/main/java -type f -name "*.java" -exec cat {} + > output.txt 
+```
+
 
 ## Controls
 

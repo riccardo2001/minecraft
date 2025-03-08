@@ -3,7 +3,6 @@ package scene;
 import org.joml.*;
 
 public class Entity {
-
     private final String id;
     private final String modelId;
     private Matrix4f modelMatrix;
@@ -46,14 +45,12 @@ public class Entity {
         return scale;
     }
 
-    public final void setPosition(float x, float y, float z) {
-        position.x = x;
-        position.y = y;
-        position.z = z;
+    public void setPosition(float x, float y, float z) {
+        position.set(x, y, z);
     }
 
     public void setRotation(float x, float y, float z, float angle) {
-        this.rotation.fromAxisAngleRad(x, y, z, angle);
+        rotation.fromAxisAngleRad(x, y, z, angle);
     }
 
     public void setScale(float scale) {

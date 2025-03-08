@@ -3,13 +3,11 @@ package graphics;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.lwjgl.system.MemoryStack;
-
-import java.util.*;
-
+import java.util.HashMap;
+import java.util.Map;
 import static org.lwjgl.opengl.GL20.*;
 
 public class UniformsMap {
-
     private int programId;
     private Map<String, Integer> uniforms;
 
@@ -19,33 +17,30 @@ public class UniformsMap {
     }
 
     public void createUniform(String uniformName) {
-        int uniformLocation = glGetUniformLocation(programId, uniformName);
-        if (uniformLocation < 0) {
-            throw new RuntimeException("Could not find uniform [" + uniformName + "] in shader program [" +
-                    programId + "]");
-        }
-        uniforms.put(uniformName, uniformLocation);
+        int location = glGetUniformLocation(programId, uniformName);
+        if (location < 0)
+            throw new RuntimeException("Could not find uniform: " + uniformName);
+        uniforms.put(uniformName, location);
     }
 
-    private int getUniformLocation(String uniformName) {
-        Integer location = uniforms.get(uniformName);
-        if (location == null) {
-            throw new RuntimeException("Could not find uniform [" + uniformName + "]");
-        }
-        return location.intValue();
+    private int getUniformLocation(String name) {
+        Integer loc = uniforms.get(name);
+        if (loc == null)
+            throw new RuntimeException("Uniform not found: " + name);
+        return loc;
     }
 
-    public void setUniform(String uniformName, int value) {
-        glUniform1i(getUniformLocation(uniformName), value);
+    public void setUniform(String name, int value) {
+        glUniform1i(getUniformLocation(name), value);
+    }
+
+    public void setUniform(String name, Matrix4f value) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            glUniformMatrix4fv(getUniformLocation(name), false, value.get(stack.mallocFloat(16)));
+        }
     }
 
     public void setUniform(String name, Vector4f value) {
         glUniform4f(getUniformLocation(name), value.x, value.y, value.z, value.w);
-    }
-
-    public void setUniform(String uniformName, Matrix4f value) {
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            glUniformMatrix4fv(getUniformLocation(uniformName), false, value.get(stack.mallocFloat(16)));
-        }
     }
 }

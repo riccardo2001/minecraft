@@ -1,13 +1,7 @@
 package scene;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import java.util.*;
 import org.joml.Vector4f;
-
 import core.Window;
 import graphics.Mesh;
 import graphics.Model;
@@ -16,31 +10,20 @@ import graphics.TextureAtlas;
 import graphics.TextureCacheAtlas;
 import graphics.UniformsMap;
 import world.Block;
-
-import static org.lwjgl.opengl.GL11.GL_COLOR_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_DEPTH_BUFFER_BIT;
-import static org.lwjgl.opengl.GL11.GL_TRIANGLES;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_INT;
-import static org.lwjgl.opengl.GL11.glClear;
-import static org.lwjgl.opengl.GL11.glDrawElements;
-import static org.lwjgl.opengl.GL11.glViewport;
-import static org.lwjgl.opengl.GL13.GL_TEXTURE0;
-import static org.lwjgl.opengl.GL13.glActiveTexture;
-import static org.lwjgl.opengl.GL20.GL_FRAGMENT_SHADER;
-import static org.lwjgl.opengl.GL20.GL_VERTEX_SHADER;
+import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL13.*;
+import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 
 public class SceneRender {
-
     private ShaderProgram shaderProgram;
     private UniformsMap uniformsMap;
 
     public SceneRender() {
-        List<ShaderProgram.ShaderModuleData> shaderModuleDataList = new ArrayList<>();
-        shaderModuleDataList.add(new ShaderProgram.ShaderModuleData("shaders/scene.vert", GL_VERTEX_SHADER));
-        shaderModuleDataList
-                .add(new ShaderProgram.ShaderModuleData("shaders/scene.frag", GL_FRAGMENT_SHADER));
-        shaderProgram = new ShaderProgram(shaderModuleDataList);
+        List<ShaderProgram.ShaderModuleData> modules = new ArrayList<>();
+        modules.add(new ShaderProgram.ShaderModuleData("shaders/scene.vert", GL_VERTEX_SHADER));
+        modules.add(new ShaderProgram.ShaderModuleData("shaders/scene.frag", GL_FRAGMENT_SHADER));
+        shaderProgram = new ShaderProgram(modules);
         createUniforms();
     }
 
@@ -51,56 +34,119 @@ public class SceneRender {
     public void render(Window window, Scene scene) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, window.getWidth(), window.getHeight());
+        // Aggiorna il frustum una sola volta per frame
+        scene.getCamera().getFrustum().update(scene.getCamera().getViewMatrix(), scene.getProjection().getProjMatrix());
 
         shaderProgram.bind();
-
-        // Imposta le matrici uniform che non cambiano per frame
         uniformsMap.setUniform("projectionMatrix", scene.getProjection().getProjMatrix());
         uniformsMap.setUniform("viewMatrix", scene.getCamera().getViewMatrix());
         uniformsMap.setUniform("txtSampler", 0);
 
-        // Binding dell'atlas texture una sola volta per frame
         TextureCacheAtlas textureCache = scene.getTextureCacheAtlas();
         TextureAtlas textureAtlas = textureCache.getAtlasTexture();
         glActiveTexture(GL_TEXTURE0);
         textureAtlas.bind();
 
-        Collection<Model> models = scene.getModelMap().values();
+        
 
-        // Organizza le entità per mesh e texture region per minimizzare i cambi di
-        // stato
+        Collection<Model> models = scene.getModelMap().values();
         for (Model model : models) {
             List<Entity> entities = model.getEntitiesList();
-
-            // Raggruppa entità per texture region
-            Map<Vector4f, List<Entity>> entitiesByTextureRegion = new HashMap<>();
+            Map<Vector4f, List<Entity>> grouped = new HashMap<>();
             for (Entity entity : entities) {
                 if (Block.isBlockVisible(scene, entity)) {
                     Vector4f region = entity.getTextureRegion();
-                    entitiesByTextureRegion.computeIfAbsent(region, k -> new ArrayList<>()).add(entity);
+                    grouped.computeIfAbsent(region, k -> new ArrayList<>()).add(entity);
                 }
             }
-
             for (Mesh mesh : model.getMeshList()) {
                 glBindVertexArray(mesh.getVaoId());
-
-                // Rendering raggruppato per texture region
-                for (Map.Entry<Vector4f, List<Entity>> entry : entitiesByTextureRegion.entrySet()) {
-                    List<Entity> entitiesWithSameTexture = entry.getValue();
-
-                    for (Entity entity : entitiesWithSameTexture) {
+                for (Map.Entry<Vector4f, List<Entity>> entry : grouped.entrySet()) {
+                    for (Entity entity : entry.getValue()) {
                         entity.updateModelMatrix();
                         uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
                         glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
                     }
                 }
-
                 glBindVertexArray(0);
             }
         }
-
         shaderProgram.unbind();
     }
+
+    /* 
+     public void render(Window window, Scene scene) {
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glViewport(0, 0, window.getWidth(), window.getHeight());
+
+        // Aggiorna il frustum una sola volta per frame
+        scene.getCamera().getFrustum().update(scene.getCamera().getViewMatrix(), scene.getProjection().getProjMatrix());
+
+        shaderProgram.bind();
+        uniformsMap.setUniform("projectionMatrix", scene.getProjection().getProjMatrix());
+        uniformsMap.setUniform("viewMatrix", scene.getCamera().getViewMatrix());
+        uniformsMap.setUniform("txtSampler", 0);
+
+        TextureCacheAtlas textureCache = scene.getTextureCacheAtlas();
+        TextureAtlas textureAtlas = textureCache.getAtlasTexture();
+        glActiveTexture(GL_TEXTURE0);
+        textureAtlas.bind();
+
+        // Itera sui chunk caricati e applica il culling a livello di chunk
+        var loadedChunks = scene.getWorld().getLoadedChunks();
+        for (var entry : loadedChunks.entrySet()) {
+            var chunk = entry.getValue();
+            // Calcola il bounding box del chunk
+            float chunkMinX = chunk.getChunkX() * Chunk.WIDTH * Block.BLOCK_SIZE;
+            float chunkMinY = 0; // Supponiamo che il chunk inizi sempre da 0 in Y
+            float chunkMinZ = chunk.getChunkZ() * Chunk.DEPTH * Block.BLOCK_SIZE;
+            float chunkMaxX = (chunk.getChunkX() + 1) * Chunk.WIDTH * Block.BLOCK_SIZE;
+            float chunkMaxY = Chunk.HEIGHT * Block.BLOCK_SIZE;
+            float chunkMaxZ = (chunk.getChunkZ() + 1) * Chunk.DEPTH * Block.BLOCK_SIZE;
+            var chunkMin = new org.joml.Vector3f(chunkMinX, chunkMinY, chunkMinZ);
+            var chunkMax = new org.joml.Vector3f(chunkMaxX, chunkMaxY, chunkMaxZ);
+
+            // Se il chunk non è nel frustum, salta il rendering per questo chunk
+            if (!scene.getCamera().getFrustum().isBoxInFrustum(chunkMin, chunkMax)) {
+                continue;
+            }
+
+            // Per ogni modello, raggruppa gli entity appartenenti a questo chunk
+            Collection<Model> models = scene.getModelMap().values();
+            for (Model model : models) {
+                List<Entity> entities = model.getEntitiesList();
+                Map<org.joml.Vector4f, List<Entity>> grouped = new HashMap<>();
+                for (Entity entity : entities) {
+                    // Calcola il chunk di appartenenza dell'entity
+                    int entityChunkX = (int) Math.floor(entity.getPosition().x / (Chunk.WIDTH * Block.BLOCK_SIZE));
+                    int entityChunkZ = (int) Math.floor(entity.getPosition().z / (Chunk.DEPTH * Block.BLOCK_SIZE));
+                    if (entityChunkX == chunk.getChunkX() && entityChunkZ == chunk.getChunkZ()) {
+                        if (Block.isBlockVisible(scene, entity)) {
+                            org.joml.Vector4f region = entity.getTextureRegion();
+                            grouped.computeIfAbsent(region, k -> new ArrayList<>()).add(entity);
+                        }
+                    }
+                }
+                // Se nel modello ci sono entity appartenenti a questo chunk, esegui il
+                // rendering
+                if (!grouped.isEmpty()) {
+                    for (Mesh mesh : model.getMeshList()) {
+                        glBindVertexArray(mesh.getVaoId());
+                        for (Map.Entry<org.joml.Vector4f, List<Entity>> groupEntry : grouped.entrySet()) {
+                            for (Entity entity : groupEntry.getValue()) {
+                                entity.updateModelMatrix();
+                                uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
+                                glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+                            }
+                        }
+                        glBindVertexArray(0);
+                    }
+                }
+            }
+        }
+        shaderProgram.unbind();
+    }
+    */
 
     private void createUniforms() {
         uniformsMap = new UniformsMap(shaderProgram.getProgramId());
@@ -109,5 +155,4 @@ public class SceneRender {
         uniformsMap.createUniform("txtSampler");
         uniformsMap.createUniform("viewMatrix");
     }
-
 }

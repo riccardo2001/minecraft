@@ -7,8 +7,8 @@ public class Engine {
     public static final int TARGET_UPS = 30;
     private final IAppLogic appLogic;
     private final Window window;
-    private Render render;
-    private Scene scene;
+    private final Render render;
+    private final Scene scene;
     private boolean running;
     private int targetFps;
     private int targetUps;
@@ -22,7 +22,6 @@ public class Engine {
         targetUps = opts.ups;
         render = new Render();
         scene = new Scene(window.getWidth(), window.getHeight());
-
         this.appLogic = appLogic;
         this.appLogic.init(window, scene, render);
         running = true;
@@ -40,57 +39,47 @@ public class Engine {
     }
 
     private void run() {
-        long initialTime = System.nanoTime(); // Usa nanoTime per la precisione in nanosecondi
-        float timeU = 1e9f / targetUps; // Tempo per aggiornamento in nanosecondi
-        float timeR = targetFps > 0 ? 1e9f / targetFps : 0; // Tempo per frame in nanosecondi
-        float deltaUpdate = 0;
-        float deltaFps = 0;
+        // Tempo fisso per update e render
+        final double nsPerUpdate = 1e9 / targetUps; // ad es. 33,33 ms per update
+        final double nsPerFrame = targetFps > 0 ? 1e9 / targetFps : 0; // ad es. 16,66 ms per frame per 60fps
 
-        int fps = 0;
-        int fpsCount = 0;
-        long fpsTime = System.nanoTime(); // Usa nanoTime per il conteggio degli FPS
+        long lastTime = System.nanoTime();
+        long lastUpdateTime = lastTime;
+        long lastFrameTime = lastTime;
+        int frames = 0;
+        long fpsTimer = lastTime;
 
-        long updateTime = initialTime;
         while (running && !window.windowShouldClose()) {
             window.pollEvents();
+            long now = System.nanoTime();
 
-            long now = System.nanoTime(); // Ottieni il tempo corrente in nanosecondi
-            long deltaTime = now - initialTime; // Differenza di tempo in nanosecondi
-            deltaUpdate += deltaTime / timeU; // Calcola deltaUpdate
-            deltaFps += deltaTime / timeR; // Calcola deltaFps
-
-            if (targetFps <= 0 || deltaFps >= 1) {
-                window.getMouseInput().input();
-                appLogic.input(window, scene, deltaTime / 1e6f); // Converti in millisecondi per l'input
+            // Update: esegue gli update (world generation, logica) solo quando è passato il
+            // tempo necessario
+            if (now - lastUpdateTime >= nsPerUpdate) {
+                long updateDiffMillis = (now - lastUpdateTime) / 1_000_000L;
+                appLogic.update(window, scene, updateDiffMillis);
+                lastUpdateTime = now;
             }
 
-            if (deltaUpdate >= 1) {
-                long diffTimeMillis = (now - updateTime) / 1000000L; // Calcola la differenza in millisecondi
-                appLogic.update(window, scene, diffTimeMillis);
-                updateTime = now;
-                deltaUpdate--;
-            }
-
-            if (targetFps <= 0 || deltaFps >= 1) {
+            // Input e Render: esegue input e rendering se è passato il tempo per un frame
+            if (targetFps <= 0 || now - lastFrameTime >= nsPerFrame) {
+                long frameDiffMillis = (now - lastFrameTime) / 1_000_000L;
+                appLogic.input(window, scene, (float) frameDiffMillis);
                 render.render(window, scene);
                 window.update();
-
-                // Incrementa il contatore dei frame
-                fpsCount++;
-
-                // Aggiorna il valore degli FPS ogni secondo
-                if (now - fpsTime >= 1e9) { // 1 secondo in nanosecondi
-                    fps = fpsCount;
-                    fpsCount = 0;
-                    fpsTime = now;
-                }
+                frames++;
+                lastFrameTime = now;
             }
-            initialTime = now;
 
-            String baseTitle = "Minecraft ";
-            window.setTitle(baseTitle + " | FPS: " + fps);
+            // Aggiorna il contatore FPS ogni secondo
+            if (now - fpsTimer >= 1e9) {
+                window.setTitle("Minecraft | FPS: " + frames);
+                frames = 0;
+                fpsTimer = now;
+            }
+
+            lastTime = now;
         }
-
         cleanup();
     }
 

@@ -2,31 +2,15 @@ package graphics;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryStack;
-
 import core.Main;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.*;
-
-import static org.lwjgl.opengl.GL11.GL_NEAREST;
-import static org.lwjgl.opengl.GL11.GL_RGBA;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
-import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
-import static org.lwjgl.opengl.GL11.GL_UNPACK_ALIGNMENT;
-import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11.glBindTexture;
-import static org.lwjgl.opengl.GL11.glDeleteTextures;
-import static org.lwjgl.opengl.GL11.glGenTextures;
-import static org.lwjgl.opengl.GL11.glPixelStorei;
-import static org.lwjgl.opengl.GL11.glTexImage2D;
-import static org.lwjgl.opengl.GL11.glTexParameteri;
+import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL30.*;
 import static org.lwjgl.stb.STBImage.*;
 
 public class TextureAtlas {
-
     private int textureId;
     private int atlasSize;
     private int tileSize;
@@ -36,42 +20,38 @@ public class TextureAtlas {
         this.texturePath = texturePath;
         this.atlasSize = atlasSize;
         this.tileSize = tileSize;
-
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(texturePath);
-            if (inputStream == null) {
+            InputStream in = Main.class.getClassLoader().getResourceAsStream(texturePath);
+            if (in == null) {
                 throw new RuntimeException("Texture not found: " + texturePath);
             }
-
-            ByteBuffer imageBuffer;
-            try {
-                byte[] imageBytes = inputStream.readAllBytes();
-                imageBuffer = BufferUtils.createByteBuffer(imageBytes.length);
-                imageBuffer.put(imageBytes);
-                imageBuffer.flip();
-            } catch (IOException e) {
-                throw new RuntimeException("Failed to read texture: " + texturePath, e);
-            }
-
-            IntBuffer w = stack.mallocInt(1);
-            IntBuffer h = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
-            stbi_set_flip_vertically_on_load(true);
-
+            byte[] bytes = in.readAllBytes();
+            ByteBuffer imageBuffer = BufferUtils.createByteBuffer(bytes.length);
+            imageBuffer.put(bytes).flip();
+            IntBuffer w = stack.mallocInt(1), h = stack.mallocInt(1), channels = stack.mallocInt(1);
             ByteBuffer buf = stbi_load_from_memory(imageBuffer, w, h, channels, 4);
-            stbi_set_flip_vertically_on_load(false);
-
             if (buf == null) {
                 throw new RuntimeException("Failed to load texture: " + stbi_failure_reason());
             }
-
             int width = w.get();
             int height = h.get();
-
             generateTexture(width, height, buf);
-
             stbi_image_free(buf);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    private void generateTexture(int width, int height, ByteBuffer buf) {
+        textureId = glGenTextures();
+        glBindTexture(GL_TEXTURE_2D, textureId);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+        glGenerateMipmap(GL_TEXTURE_2D);
     }
 
     public void bind() {
@@ -82,23 +62,12 @@ public class TextureAtlas {
         glDeleteTextures(textureId);
     }
 
-    private void generateTexture(int width, int height, ByteBuffer buf) {
-        textureId = glGenTextures();
-
-        glBindTexture(GL_TEXTURE_2D, textureId);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-        glGenerateMipmap(GL_TEXTURE_2D);
-    }
-
     public float[] getUVCoordinates(int x, int y) {
-        float uMin = (x * (float) tileSize) / atlasSize;
-        float vMin = (y * (float) tileSize) / atlasSize;
-        float uMax = ((x + 1) * (float) tileSize) / atlasSize;
-        float vMax = ((y + 1) * (float) tileSize) / atlasSize;
-
+        float halfPixel = 0.5f / atlasSize;
+        float uMin = (x * tileSize + halfPixel) / atlasSize;
+        float vMin = (y * tileSize + halfPixel) / atlasSize;
+        float uMax = (((x + 1) * tileSize) - halfPixel) / atlasSize;
+        float vMax = (((y + 1) * tileSize) - halfPixel) / atlasSize;
         return new float[] { uMin, vMin, uMax, vMax };
     }
 

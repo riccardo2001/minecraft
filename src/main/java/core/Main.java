@@ -1,49 +1,51 @@
 package core;
 
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_A;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_D;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_S;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_SPACE;
-import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
-
-import org.joml.Vector2f;
-
 import graphics.Render;
 import scene.Camera;
 import scene.Scene;
 import world.World;
+import org.joml.Vector2f;
+import static org.lwjgl.glfw.GLFW.*;
 
 public class Main implements IAppLogic {
-
     private static final float MOUSE_SENSITIVITY = 0.1f;
     private static final float MOVEMENT_SPEED = 0.005f;
 
     public static void main(String[] args) {
         Main main = new Main();
-        Engine gameEng = new Engine("Minecraft ", new Window.WindowOptions(), main);
+        Window.WindowOptions opts = new Window.WindowOptions();
+        opts.width = 1280;
+        opts.height = 720;
+        opts.fps = 100;
+        opts.ups = Engine.TARGET_UPS;
+        opts.compatibleProfile = false;
+        Engine gameEng = new Engine("Minecraft", opts, main);
         gameEng.start();
     }
 
     @Override
     public void cleanup() {
-        // Nothing to be done yet
+        // Cleanup eventuale
     }
 
     @Override
     public void init(Window window, Scene scene, Render render) {
         scene.setWorld(new World());
         scene.getWorld().generateInitialWorld(0, 0);
-        scene.getCamera().setPosition(0f, 0f, 0f);
+        scene.getCamera().setPosition(0f, 75f, 0f);
         System.out.println("World generated");
     }
 
     @Override
     public void input(Window window, Scene scene, float diffTimeMillis) {
+        // Aggiorna il movimento del mouse
+        window.getMouseInput().input();
+
         float move = diffTimeMillis * MOVEMENT_SPEED;
         Camera camera = scene.getCamera();
         MouseInput mouseInput = window.getMouseInput();
         Vector2f displVec = mouseInput.getDisplVec();
+
         if (window.isKeyPressed(GLFW_KEY_W)) {
             camera.moveForward(move);
         } else if (window.isKeyPressed(GLFW_KEY_S)) {
@@ -59,7 +61,7 @@ public class Main implements IAppLogic {
         } else if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
             camera.moveDown(move);
         }
-        
+
         camera.addRotation(
                 (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),
                 (float) Math.toRadians(displVec.y * MOUSE_SENSITIVITY));

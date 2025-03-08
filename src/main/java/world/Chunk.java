@@ -7,9 +7,7 @@ public class Chunk {
 
     private final int chunkX;
     private final int chunkZ;
-
     private Block[][][] blocks;
-
     private boolean isDirty;
 
     public Chunk(int chunkX, int chunkZ) {
@@ -20,15 +18,15 @@ public class Chunk {
         System.out.println("Generating Chunk at: " + chunkX + ", " + chunkZ);
 
         generateInitialTerrain();
-        printChunkBlocks();
     }
 
     private void generateInitialTerrain() {
-        for (int x = 0; x < 1; x++) {
-            for (int z = 0; z < 1; z++) {
+        // Ciclo corretto: x da 0 a WIDTH, z da 0 a DEPTH, y da 0 a HEIGHT.
+        for (int x = 0; x < WIDTH; x++) {
+            for (int z = 0; z < DEPTH; z++) { // Usa DEPTH qui!
                 int terrainHeight = calculateTerrainHeight(x, z);
 
-                for (int y = 0; y < 1; y++) {
+                for (int y = 0; y < HEIGHT; y++) { // Usa HEIGHT per la verticale
                     Block.BlockType blockType = determineBlockType(x, y, z, terrainHeight);
 
                     if (blockType != Block.BlockType.AIR) {
@@ -46,41 +44,23 @@ public class Chunk {
         }
     }
 
-    public void printChunkBlocks() {
-        for (int x = 0; x < WIDTH; x++) {
-            for (int y = 0; y < HEIGHT; y++) {
-                for (int z = 0; z < DEPTH; z++) {
-                    if (blocks[x][y][z] != null) {
-                        System.out.println("Block at: x=" + x + ", y=" + y + ", z=" + z +
-                                ", Type=" + blocks[x][y][z].getType());
-                    }
-                }
-            }
-        }
-    }
-
     private int calculateTerrainHeight(int localX, int localZ) {
-        // double noise1 = Math.sin(localX * 0.1) * 10;
-        // double noise2 = Math.cos(localZ * 0.2) * 8;
-        // double noise3 = Math.sin(localX * 0.05 + localZ * 0.05) * 15;
+        double noise1 = Math.sin(localX * 0.1) * 10;
+        double noise2 = Math.cos(localZ * 0.2) * 8;
+        double noise3 = Math.sin(localX * 0.05 + localZ * 0.05) * 15;
 
-        // return 64 + (int) (noise1 + noise2 + noise3);
-        return 4;
+        return 64 + (int) (noise1 + noise2 + noise3);
     }
 
     private Block.BlockType determineBlockType(int x, int y, int z, int terrainHeight) {
-        // Bedrock al fondo
         if (y == 0)
             return Block.BlockType.STONE;
-
-        // Strati del terreno
         if (y < terrainHeight - 3)
-            return Block.BlockType.STONE; // Pietra profonda
+            return Block.BlockType.STONE;
         if (y < terrainHeight - 1)
-            return Block.BlockType.STONE; // Pietra vicino alla superficie
+            return Block.BlockType.STONE;
         if (y < terrainHeight)
-            return Block.BlockType.GRASS; // Erba in superficie
-
+            return Block.BlockType.GRASS;
         return Block.BlockType.AIR;
     }
 

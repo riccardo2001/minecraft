@@ -1,8 +1,5 @@
 package world;
 
-import graphics.TextureCacheAtlas;
-import scene.Scene;
-
 public class Chunk {
     public static final int WIDTH = 16;
     public static final int HEIGHT = 256;
@@ -13,16 +10,11 @@ public class Chunk {
 
     private Block[][][] blocks;
 
-    private Scene scene;
-    private TextureCacheAtlas textureCache;
-
     private boolean isDirty;
 
-    public Chunk(int chunkX, int chunkZ, Scene scene, TextureCacheAtlas textureCache) {
+    public Chunk(int chunkX, int chunkZ) {
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
-        this.scene = scene;
-        this.textureCache = textureCache;
         this.blocks = new Block[WIDTH][HEIGHT][DEPTH];
         this.isDirty = true;
         System.out.println("Generating Chunk at: " + chunkX + ", " + chunkZ);
@@ -32,11 +24,11 @@ public class Chunk {
     }
 
     private void generateInitialTerrain() {
-        for (int x = 0; x < WIDTH; x++) {
-            for (int z = 0; z < DEPTH; z++) {
+        for (int x = 0; x < 1; x++) {
+            for (int z = 0; z < 1; z++) {
                 int terrainHeight = calculateTerrainHeight(x, z);
 
-                for (int y = 0; y < HEIGHT; y++) {
+                for (int y = 0; y < 1; y++) {
                     Block.BlockType blockType = determineBlockType(x, y, z, terrainHeight);
 
                     if (blockType != Block.BlockType.AIR) {
@@ -44,7 +36,7 @@ public class Chunk {
                         float worldY = y * Block.BLOCK_SIZE;
                         float worldZ = (chunkZ * DEPTH + z) * Block.BLOCK_SIZE;
 
-                        Block block = new Block(scene, blockType, textureCache);
+                        Block block = new Block(blockType);
                         block.setWorldPosition(worldX, worldY, worldZ);
 
                         setBlock(x, y, z, block);
@@ -68,11 +60,11 @@ public class Chunk {
     }
 
     private int calculateTerrainHeight(int localX, int localZ) {
-        double noise1 = Math.sin(localX * 0.1) * 10;
-        double noise2 = Math.cos(localZ * 0.2) * 8;
-        double noise3 = Math.sin(localX * 0.05 + localZ * 0.05) * 15;
+        // double noise1 = Math.sin(localX * 0.1) * 10;
+        // double noise2 = Math.cos(localZ * 0.2) * 8;
+        // double noise3 = Math.sin(localX * 0.05 + localZ * 0.05) * 15;
 
-        //return 64 + (int) (noise1 + noise2 + noise3);
+        // return 64 + (int) (noise1 + noise2 + noise3);
         return 4;
     }
 
@@ -125,17 +117,7 @@ public class Chunk {
         return chunkZ;
     }
 
-    public void cleanup() {
-        for (int x = 0; x < blocks.length; x++) {
-            for (int y = 0; y < blocks[x].length; y++) {
-                for (int z = 0; z < blocks[x][y].length; z++) {
-                    Block block = blocks[x][y][z];
-                    if (block != null && block.getEntity() != null) {
-                        scene.removeEntity(block.getEntity().getId());
-                    }
-                }
-            }
-        }
-        // Altri passi di pulizia necessari
+    public Block[][][] getBlocks() {
+        return blocks;
     }
 }

@@ -7,13 +7,15 @@ public class Entity {
     private final String id;
     private final String modelId;
     private Matrix4f modelMatrix;
+    private Vector4f textureRegion;
     private Vector3f position;
     private Quaternionf rotation;
     private float scale;
 
-    public Entity(String id, String modelId) {
+    public Entity(String id, String modelId, Vector4f textureRegion) {
         this.id = id;
         this.modelId = modelId;
+        this.textureRegion = textureRegion;
         modelMatrix = new Matrix4f();
         position = new Vector3f();
         rotation = new Quaternionf();
@@ -60,5 +62,13 @@ public class Entity {
 
     public void updateModelMatrix() {
         modelMatrix.translationRotateScale(position, rotation, scale);
+    }
+
+    public Vector4f getTextureRegion() {
+        return textureRegion;
+    }
+
+    public void setTextureRegion(Vector4f textureRegion) {
+        this.textureRegion = textureRegion;
     }
 }

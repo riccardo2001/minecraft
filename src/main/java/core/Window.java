@@ -13,10 +13,11 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class Window {
     private final long windowHandle;
     private int height;
-    private Callable<Void> resizeFunc;
     private int width;
-    private MouseInput mouseInput;
     private String title;
+    
+    private Callable<Void> resizeFunc;
+    private MouseInput mouseInput;
 
     public static class WindowOptions {
         public boolean compatibleProfile;
@@ -86,15 +87,15 @@ public class Window {
 
         int[] arrWidth = new int[1];
         int[] arrHeight = new int[1];
-        glfwGetFramebufferSize(windowHandle, arrWidth, arrHeight);
         width = arrWidth[0];
         height = arrHeight[0];
+        glfwGetFramebufferSize(windowHandle, arrWidth, arrHeight);
         mouseInput = new MouseInput(windowHandle);
     }
 
     public void keyCallBack(int key, int action) {
         if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-            glfwSetWindowShouldClose(windowHandle, true); // We will detect this in the rendering loop
+            glfwSetWindowShouldClose(windowHandle, true);
         }
     }
 

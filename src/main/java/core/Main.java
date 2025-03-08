@@ -10,7 +10,6 @@ import static org.lwjgl.glfw.GLFW.GLFW_KEY_W;
 import org.joml.Vector2f;
 
 import graphics.Render;
-import graphics.TextureCacheAtlas;
 import scene.Camera;
 import scene.Scene;
 import world.World;
@@ -19,8 +18,6 @@ public class Main implements IAppLogic {
 
     private static final float MOUSE_SENSITIVITY = 0.1f;
     private static final float MOVEMENT_SPEED = 0.005f;
-    private World world;
-    private TextureCacheAtlas textureCache;
 
     public static void main(String[] args) {
         Main main = new Main();
@@ -35,12 +32,9 @@ public class Main implements IAppLogic {
 
     @Override
     public void init(Window window, Scene scene, Render render) {
-        textureCache = new TextureCacheAtlas("textures/atlas.png", 256, 16);
-        world = new World(scene, textureCache);
-
-        world.generateInitialWorld(0, 0);
-        scene.setWorld(world);
-        scene.getCamera().setPosition(10f, 70f, 10f);
+        scene.setWorld(new World());
+        scene.getWorld().generateInitialWorld(0, 0);
+        scene.getCamera().setPosition(0f, 0f, 0f);
         System.out.println("World generated");
     }
 
@@ -48,6 +42,8 @@ public class Main implements IAppLogic {
     public void input(Window window, Scene scene, float diffTimeMillis) {
         float move = diffTimeMillis * MOVEMENT_SPEED;
         Camera camera = scene.getCamera();
+        MouseInput mouseInput = window.getMouseInput();
+        Vector2f displVec = mouseInput.getDisplVec();
         if (window.isKeyPressed(GLFW_KEY_W)) {
             camera.moveForward(move);
         } else if (window.isKeyPressed(GLFW_KEY_S)) {
@@ -63,8 +59,7 @@ public class Main implements IAppLogic {
         } else if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
             camera.moveDown(move);
         }
-        MouseInput mouseInput = window.getMouseInput();
-        Vector2f displVec = mouseInput.getDisplVec();
+        
         camera.addRotation(
                 (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),
                 (float) Math.toRadians(displVec.y * MOUSE_SENSITIVITY));
@@ -72,11 +67,8 @@ public class Main implements IAppLogic {
 
     @Override
     public void update(Window window, Scene scene, long diffTimeMillis) {
-        Camera camera = scene.getCamera();
-        float playerX = camera.getPosition().x;
-        float playerZ = camera.getPosition().z;
-
-        world.updateWorldGeneration(playerX, playerZ);
+        float playerX = scene.getCamera().getPosition().x;
+        float playerZ = scene.getCamera().getPosition().z;
+        scene.updateWorldGeneration(playerX, playerZ);
     }
-
 }

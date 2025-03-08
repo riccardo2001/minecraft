@@ -8,8 +8,9 @@ public class MouseInput {
 
     private Vector2f currentPos;
     private Vector2f displVec;
-    private boolean leftButtonPressed;
     private Vector2f previousPos;
+
+    private boolean leftButtonPressed;
     private boolean rightButtonPressed;
 
     public MouseInput(long windowHandle) {

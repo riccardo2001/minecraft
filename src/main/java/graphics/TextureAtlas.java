@@ -28,9 +28,9 @@ import static org.lwjgl.stb.STBImage.*;
 public class TextureAtlas {
 
     private int textureId;
+    private int atlasSize;
+    private int tileSize;
     private String texturePath;
-    private int atlasSize; // Es. 256 per un atlas 256x256
-    private int tileSize; // Es. 16 per texture 16x16
 
     public TextureAtlas(String texturePath, int atlasSize, int tileSize) {
         this.texturePath = texturePath;
@@ -56,8 +56,10 @@ public class TextureAtlas {
             IntBuffer w = stack.mallocInt(1);
             IntBuffer h = stack.mallocInt(1);
             IntBuffer channels = stack.mallocInt(1);
+            stbi_set_flip_vertically_on_load(true);
 
             ByteBuffer buf = stbi_load_from_memory(imageBuffer, w, h, channels, 4);
+            stbi_set_flip_vertically_on_load(false);
 
             if (buf == null) {
                 throw new RuntimeException("Failed to load texture: " + stbi_failure_reason());
@@ -91,14 +93,6 @@ public class TextureAtlas {
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
-    /**
-     * Ottiene le coordinate UV di una texture nell'Atlas.
-     *
-     * @param x Posizione X della texture nella griglia (es. 0 per la prima
-     *          colonna).
-     * @param y Posizione Y della texture nella griglia (es. 1 per la seconda riga).
-     * @return Un array con { uMin, vMin, uMax, vMax }.
-     */
     public float[] getUVCoordinates(int x, int y) {
         float uMin = (x * (float) tileSize) / atlasSize;
         float vMin = (y * (float) tileSize) / atlasSize;

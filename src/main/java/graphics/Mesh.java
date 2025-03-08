@@ -22,7 +22,6 @@ public class Mesh {
 
     private int numVertices;
     private int vaoId;
-    int vboId;
     private List<Integer> vboIdList;
 
     public Mesh(float[] positions, float[] textCoords, int[] indices) {

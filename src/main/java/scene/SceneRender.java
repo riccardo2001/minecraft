@@ -2,15 +2,18 @@ package scene;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.joml.Vector4f;
 
 import core.Window;
-import graphics.Material;
 import graphics.Mesh;
 import graphics.Model;
 import graphics.ShaderProgram;
-import graphics.Texture;
-import graphics.TextureCache;
+import graphics.TextureAtlas;
+import graphics.TextureCacheAtlas;
 import graphics.UniformsMap;
 import world.Block;
 
@@ -51,39 +54,48 @@ public class SceneRender {
 
         shaderProgram.bind();
 
-        // Imposta le matrici uniform
+        // Imposta le matrici uniform che non cambiano per frame
         uniformsMap.setUniform("projectionMatrix", scene.getProjection().getProjMatrix());
         uniformsMap.setUniform("viewMatrix", scene.getCamera().getViewMatrix());
         uniformsMap.setUniform("txtSampler", 0);
 
-        TextureCache textureCache = scene.getTextureCache();
+        // Binding dell'atlas texture una sola volta per frame
+        TextureCacheAtlas textureCache = scene.getTextureCacheAtlas();
+        TextureAtlas textureAtlas = textureCache.getAtlasTexture();
+        glActiveTexture(GL_TEXTURE0);
+        textureAtlas.bind();
+
         Collection<Model> models = scene.getModelMap().values();
 
-        // Riduci il numero di cambi di texture
+        // Organizza le entità per mesh e texture region per minimizzare i cambi di
+        // stato
         for (Model model : models) {
             List<Entity> entities = model.getEntitiesList();
 
-            for (Material material : model.getMaterialList()) {
-                Texture texture = textureCache.getTexture(material.getTexturePath());
-                glActiveTexture(GL_TEXTURE0);
-                texture.bind();
-
-                // Gruppo le entità per modello e materiale
-                List<Mesh> meshes = material.getMeshList();
-                for (Mesh mesh : meshes) {
-                    glBindVertexArray(mesh.getVaoId());
-
-                    // Batching: disegna tutte le entità con lo stesso materiale
-                    for (Entity entity : entities) {
-                        if (Block.isBlockVisible(scene, entity)) {
-                            entity.updateModelMatrix();
-                            uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
-                            glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-                        }
-
-                    }
-                    glBindVertexArray(0);
+            // Raggruppa entità per texture region
+            Map<Vector4f, List<Entity>> entitiesByTextureRegion = new HashMap<>();
+            for (Entity entity : entities) {
+                if (Block.isBlockVisible(scene, entity)) {
+                    Vector4f region = entity.getTextureRegion();
+                    entitiesByTextureRegion.computeIfAbsent(region, k -> new ArrayList<>()).add(entity);
                 }
+            }
+
+            for (Mesh mesh : model.getMeshList()) {
+                glBindVertexArray(mesh.getVaoId());
+
+                // Rendering raggruppato per texture region
+                for (Map.Entry<Vector4f, List<Entity>> entry : entitiesByTextureRegion.entrySet()) {
+                    List<Entity> entitiesWithSameTexture = entry.getValue();
+
+                    for (Entity entity : entitiesWithSameTexture) {
+                        entity.updateModelMatrix();
+                        uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
+                        glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+                    }
+                }
+
+                glBindVertexArray(0);
             }
         }
 

@@ -9,16 +9,12 @@ public class Model {
 
     private final String id;
     private List<Entity> entitiesList;
-    private List<Material> materialList;
+    private List<Mesh> meshList;
 
-    public Model(String id, List<Material> materialList) {
+    public Model(String id, List<Mesh> meshList) {
         this.id = id;
-        entitiesList = new ArrayList<>();
-        this.materialList = materialList;
-    }
-
-    public void cleanup() {
-        materialList.forEach(Material::cleanup);
+        this.meshList = meshList;
+        this.entitiesList = new ArrayList<>();
     }
 
     public List<Entity> getEntitiesList() {
@@ -29,7 +25,16 @@ public class Model {
         return id;
     }
 
-    public List<Material> getMaterialList() {
-        return materialList;
+    public void setEntitiesList(List<Entity> entitiesList) {
+        this.entitiesList = entitiesList;
     }
+
+    public List<Mesh> getMeshList() {
+        return this.meshList;
+    }
+
+    public void setMeshList(List<Mesh> meshList) {
+        this.meshList = meshList;
+    }
+
 }

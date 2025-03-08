@@ -8,8 +8,8 @@ public class Engine {
     private final IAppLogic appLogic;
     private final Window window;
     private Render render;
-    private boolean running;
     private Scene scene;
+    private boolean running;
     private int targetFps;
     private int targetUps;
 
@@ -20,18 +20,19 @@ public class Engine {
         });
         targetFps = opts.fps;
         targetUps = opts.ups;
-        this.appLogic = appLogic;
         render = new Render();
         scene = new Scene(window.getWidth(), window.getHeight());
-        appLogic.init(window, scene, render);
+
+        this.appLogic = appLogic;
+        this.appLogic.init(window, scene, render);
         running = true;
     }
 
     private void cleanup() {
         appLogic.cleanup();
+        window.cleanup();
         render.cleanup();
         scene.cleanup();
-        window.cleanup();
     }
 
     private void resize() {

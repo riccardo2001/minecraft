@@ -6,6 +6,8 @@ import scene.Scene;
 import world.World;
 import org.joml.Vector2f;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.opengl.GL11.*;
+
 
 public class Main implements IAppLogic {
     private static final float MOUSE_SENSITIVITY = 0.1f;
@@ -34,6 +36,11 @@ public class Main implements IAppLogic {
         scene.getWorld().generateInitialWorld(0, 0);
         scene.getCamera().setPosition(0f, 75f, 0f);
         System.out.println("World generated");
+
+        System.out.println("OpenGL Vendor: " + glGetString(GL_VENDOR));
+        System.out.println("OpenGL Renderer: " + glGetString(GL_RENDERER));
+        System.out.println("OpenGL Version: " + glGetString(GL_VERSION));
+
     }
 
     @Override

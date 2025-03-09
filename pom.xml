@@ -12,6 +12,7 @@
         <lwjgl.version>3.3.2</lwjgl.version>
         <joml.version>1.10.8</joml.version>
         <native.classifier>natives-macos-arm64</native.classifier>
+        <!-- <native.classifier>natives-windows</native.classifier> -->
     </properties>
 
     <dependencies>

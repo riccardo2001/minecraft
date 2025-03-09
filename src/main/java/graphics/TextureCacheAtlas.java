@@ -11,8 +11,8 @@ public class TextureCacheAtlas {
     private Map<String, int[]> texturePositions;
     private Map<BlockType, Vector4f> textureRegionCache;
 
-    public TextureCacheAtlas(String texturePath, int atlasSize, int tileSize) {
-        atlas = new TextureAtlas(texturePath, atlasSize, tileSize);
+    public TextureCacheAtlas(String texturePath, int atlasWidth, int atlasHeight, int tileSize) {
+        atlas = new TextureAtlas(texturePath, atlasWidth, atlasHeight, tileSize);
         uvCache = new HashMap<>();
         texturePositions = initializeTexturePositions();
         textureRegionCache = new HashMap<>();

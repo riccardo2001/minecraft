@@ -46,7 +46,7 @@ public class Scene {
     public Scene(int width, int height) {
         projection = new Projection(width, height);
         camera = new Camera();
-        textureCacheAtlas = new TextureCacheAtlas("textures/atlas.png", 256, 16);
+        textureCacheAtlas = new TextureCacheAtlas("textures/atlas.png", 256, 256, 16);
     }
 
     public static void addEntity(Entity entity) {

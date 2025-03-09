@@ -12,14 +12,17 @@ import static org.lwjgl.stb.STBImage.*;
 
 public class TextureAtlas {
     private int textureId;
-    private int atlasSize;
+    private int atlasWidth;
+    private int atlasHeight;
     private int tileSize;
     private String texturePath;
 
-    public TextureAtlas(String texturePath, int atlasSize, int tileSize) {
+    public TextureAtlas(String texturePath, int atlasWidth, int atlasHeight, int tileSize) {
         this.texturePath = texturePath;
-        this.atlasSize = atlasSize;
+        this.atlasWidth = atlasWidth;
+        this.atlasHeight = atlasHeight;
         this.tileSize = tileSize;
+
         try (MemoryStack stack = MemoryStack.stackPush()) {
             InputStream in = Main.class.getClassLoader().getResourceAsStream(texturePath);
             if (in == null) {
@@ -33,9 +36,7 @@ public class TextureAtlas {
             if (buf == null) {
                 throw new RuntimeException("Failed to load texture: " + stbi_failure_reason());
             }
-            int width = w.get();
-            int height = h.get();
-            generateTexture(width, height, buf);
+            generateTexture(w.get(), h.get(), buf);
             stbi_image_free(buf);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -58,20 +59,20 @@ public class TextureAtlas {
         glBindTexture(GL_TEXTURE_2D, textureId);
     }
 
-    public void cleanup() {
-        glDeleteTextures(textureId);
-    }
-
     public float[] getUVCoordinates(int x, int y) {
-        float halfPixel = 0.5f / atlasSize;
-        float uMin = (x * tileSize + halfPixel) / atlasSize;
-        float vMin = (y * tileSize + halfPixel) / atlasSize;
-        float uMax = (((x + 1) * tileSize) - halfPixel) / atlasSize;
-        float vMax = (((y + 1) * tileSize) - halfPixel) / atlasSize;
+        float uMin = (x * tileSize) / (float) atlasWidth;
+        float vMin = (y * tileSize) / (float) atlasHeight;
+        float uMax = ((x + 1) * tileSize) / (float) atlasWidth;
+        float vMax = ((y + 1) * tileSize) / (float) atlasHeight;
+
         return new float[] { uMin, vMin, uMax, vMax };
     }
 
     public String getTexturePath() {
         return texturePath;
+    }
+
+    public void cleanup() {
+        glDeleteTextures(textureId);
     }
 }

@@ -125,9 +125,14 @@ public static void main(String[] args) {
 }
 ```
 
-## Java prompt starting
+## Java prompt starting on MacOs
 ```bash
 /Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java -XstartOnFirstThread -jar minecraft-1.0.jar
+```
+
+## Java prompt starting on Windows
+```bash
+/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java -jar minecraft-1.0.jar
 ```
 
 ## Bash command for class union

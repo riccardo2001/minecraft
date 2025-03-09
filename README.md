@@ -140,7 +140,7 @@ mvn clean install -Pmacos-arm64
 
 ## Starting the Game
 
-Run the `Main` class (in the main package) to start the game.
+Run the `Main` class (in the core package) to start the game.
 
 ```java
 public static void main(String[] args) {

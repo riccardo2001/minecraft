@@ -11,9 +11,50 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lwjgl.version>3.3.2</lwjgl.version>
         <joml.version>1.10.8</joml.version>
-        <native.classifier>natives-macos-arm64</native.classifier>
-        <!-- <native.classifier>natives-windows</native.classifier> -->
     </properties>
+
+    <profiles>
+        <!-- Windows -->
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <native.classifier>natives-windows</native.classifier>
+            </properties>
+        </profile>
+
+        <!-- MacOS (ARM64) -->
+        <profile>
+            <id>macos-arm64</id>
+            <activation>
+                <os>
+                    <name>Mac OS X</name>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <native.classifier>natives-macos-arm64</native.classifier>
+            </properties>
+        </profile>
+
+        <!-- Linux -->
+        <profile>
+            <id>linux</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                </os>
+            </activation>
+            <properties>
+                <native.classifier>natives-linux</native.classifier>
+            </properties>
+        </profile>
+    </profiles>
+
 
     <dependencies>
         <!-- Library LWJGL -->

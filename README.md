@@ -44,7 +44,6 @@ git clone https://github.com/riccardo2001/minecraft.git
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <lwjgl.version>3.3.2</lwjgl.version>
         <joml.version>1.10.8</joml.version>
-        <native.classifier>natives-macos-arm64</native.classifier>
     </properties>
 
     <dependencies>
@@ -113,6 +112,20 @@ git clone https://github.com/riccardo2001/minecraft.git
     </dependencies>
 ```
 
+4. Compile with maven:
+
+- Windows
+
+```bash
+mvn clean install -Pwindows
+```
+
+- Macos
+
+```bash
+mvn clean install -Pmacos-arm64
+```
+
 ## Starting the Game
 
 Run the `Main` class (in the main package) to start the game.
@@ -134,6 +147,8 @@ public static void main(String[] args) {
 ```bash
 /Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java -jar minecraft-1.0.jar
 ```
+
+
 
 ## Bash command for class union
 ```bash

@@ -7,7 +7,7 @@ A simple Minecraft clone developed in Java using LWJGL (Lightweight Java Game Li
 - **Java 17** (not compatible with earlier versions)
 - LWJGL 3.x
 - Java-compatible IDE VScode
-- OS compatible with macOS arm64
+- OS compatible with macOS arm64 and Windows x86
 
 ## Features
 

@@ -18,6 +18,17 @@ A simple Minecraft clone developed in Java using LWJGL (Lightweight Java Game Li
 - Chunk handling
 - World generation
 
+## Controls
+
+- `W`: Move forward
+- `S`: Move backward
+- `A`: Move left
+- `D`: Move right
+- `L-CTRL`: Move down
+- `SPACE`: Move up
+- `MOUSE`: Look around
+- `ESC`: Pause/Resume
+
 ## Project Structure
 
 The project is organized in the following packages:
@@ -120,11 +131,12 @@ git clone https://github.com/riccardo2001/minecraft.git
 mvn clean install -Pwindows
 ```
 
-- Macos
+- MacOs
 
 ```bash
 mvn clean install -Pmacos-arm64
 ```
+
 
 ## Starting the Game
 
@@ -138,34 +150,25 @@ public static void main(String[] args) {
 }
 ```
 
-## Java prompt starting on MacOs
+## Java prompt starting
+
+-  MacOs
+
 ```bash
-/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java -XstartOnFirstThread -jar minecraft-1.0.jar
+java -XstartOnFirstThread -jar minecraft-1.0.jar
 ```
 
-## Java prompt starting on Windows
-```bash
-/Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home/bin/java -jar minecraft-1.0.jar
-```
+-  Windows
 
+```bash
+java -jar minecraft-1.0.jar
+```
 
 
 ## Bash command for class union
 ```bash
 find ~/minecraft/src/main/java -type f -name "*.java" -exec cat {} + > output.txt 
 ```
-
-
-## Controls
-
-- `W`: Move forward
-- `S`: Move backward
-- `A`: Move left
-- `D`: Move right
-- `L-CTRL`: Move down
-- `SPACE`: Move up
-- `MOUSE`: Look around
-- `ESC`: Pause/Resume
 
 
 ## ⚠️ Warning

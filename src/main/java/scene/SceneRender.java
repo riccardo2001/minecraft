@@ -10,6 +10,8 @@ import graphics.TextureAtlas;
 import graphics.TextureCacheAtlas;
 import graphics.UniformsMap;
 import world.Block;
+import world.Chunk;
+
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
 import static org.lwjgl.opengl.GL20.*;
@@ -34,7 +36,7 @@ public class SceneRender {
     public void render(Window window, Scene scene) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glViewport(0, 0, window.getWidth(), window.getHeight());
-        // Aggiorna il frustum una sola volta per frame
+
         scene.getCamera().getFrustum().update(scene.getCamera().getViewMatrix(), scene.getProjection().getProjMatrix());
 
         shaderProgram.bind();
@@ -47,58 +49,36 @@ public class SceneRender {
         glActiveTexture(GL_TEXTURE0);
         textureAtlas.bind();
 
-        
-
+        Map<Model, Map<Integer, Map<Vector4f, List<Entity>>>> modelChunkMap = new HashMap<>();
         Collection<Model> models = scene.getModelMap().values();
+
+        var loadedChunks = scene.getWorld().getLoadedChunks();
+
         for (Model model : models) {
             List<Entity> entities = model.getEntitiesList();
-            Map<Vector4f, List<Entity>> grouped = new HashMap<>();
             for (Entity entity : entities) {
                 if (Block.isBlockVisible(scene, entity)) {
+                    int entityChunkX = (int) Math.floor(entity.getPosition().x / (Chunk.WIDTH * Block.BLOCK_SIZE));
+                    int entityChunkZ = (int) Math.floor(entity.getPosition().z / (Chunk.DEPTH * Block.BLOCK_SIZE));
+
+                    int chunkKey = entityChunkX * 10000 + entityChunkZ;
+
+                    Map<Integer, Map<Vector4f, List<Entity>>> chunkMap = modelChunkMap.computeIfAbsent(model,
+                            k -> new HashMap<>());
+
+                    Map<Vector4f, List<Entity>> textureMap = chunkMap.computeIfAbsent(chunkKey, k -> new HashMap<>());
+
                     Vector4f region = entity.getTextureRegion();
-                    grouped.computeIfAbsent(region, k -> new ArrayList<>()).add(entity);
+                    textureMap.computeIfAbsent(region, k -> new ArrayList<>()).add(entity);
                 }
-            }
-            for (Mesh mesh : model.getMeshList()) {
-                glBindVertexArray(mesh.getVaoId());
-                for (Map.Entry<Vector4f, List<Entity>> entry : grouped.entrySet()) {
-                    for (Entity entity : entry.getValue()) {
-                        entity.updateModelMatrix();
-                        uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
-                        glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-                    }
-                }
-                glBindVertexArray(0);
             }
         }
-        shaderProgram.unbind();
-    }
 
-    /* 
-     public void render(Window window, Scene scene) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, window.getWidth(), window.getHeight());
-
-        // Aggiorna il frustum una sola volta per frame
-        scene.getCamera().getFrustum().update(scene.getCamera().getViewMatrix(), scene.getProjection().getProjMatrix());
-
-        shaderProgram.bind();
-        uniformsMap.setUniform("projectionMatrix", scene.getProjection().getProjMatrix());
-        uniformsMap.setUniform("viewMatrix", scene.getCamera().getViewMatrix());
-        uniformsMap.setUniform("txtSampler", 0);
-
-        TextureCacheAtlas textureCache = scene.getTextureCacheAtlas();
-        TextureAtlas textureAtlas = textureCache.getAtlasTexture();
-        glActiveTexture(GL_TEXTURE0);
-        textureAtlas.bind();
-
-        // Itera sui chunk caricati e applica il culling a livello di chunk
-        var loadedChunks = scene.getWorld().getLoadedChunks();
         for (var entry : loadedChunks.entrySet()) {
             var chunk = entry.getValue();
-            // Calcola il bounding box del chunk
+
             float chunkMinX = chunk.getChunkX() * Chunk.WIDTH * Block.BLOCK_SIZE;
-            float chunkMinY = 0; // Supponiamo che il chunk inizi sempre da 0 in Y
+            float chunkMinY = 0;
             float chunkMinZ = chunk.getChunkZ() * Chunk.DEPTH * Block.BLOCK_SIZE;
             float chunkMaxX = (chunk.getChunkX() + 1) * Chunk.WIDTH * Block.BLOCK_SIZE;
             float chunkMaxY = Chunk.HEIGHT * Block.BLOCK_SIZE;
@@ -106,47 +86,39 @@ public class SceneRender {
             var chunkMin = new org.joml.Vector3f(chunkMinX, chunkMinY, chunkMinZ);
             var chunkMax = new org.joml.Vector3f(chunkMaxX, chunkMaxY, chunkMaxZ);
 
-            // Se il chunk non è nel frustum, salta il rendering per questo chunk
             if (!scene.getCamera().getFrustum().isBoxInFrustum(chunkMin, chunkMax)) {
                 continue;
             }
 
-            // Per ogni modello, raggruppa gli entity appartenenti a questo chunk
-            Collection<Model> models = scene.getModelMap().values();
+            int chunkKey = chunk.getChunkX() * 10000 + chunk.getChunkZ();
+
             for (Model model : models) {
-                List<Entity> entities = model.getEntitiesList();
-                Map<org.joml.Vector4f, List<Entity>> grouped = new HashMap<>();
-                for (Entity entity : entities) {
-                    // Calcola il chunk di appartenenza dell'entity
-                    int entityChunkX = (int) Math.floor(entity.getPosition().x / (Chunk.WIDTH * Block.BLOCK_SIZE));
-                    int entityChunkZ = (int) Math.floor(entity.getPosition().z / (Chunk.DEPTH * Block.BLOCK_SIZE));
-                    if (entityChunkX == chunk.getChunkX() && entityChunkZ == chunk.getChunkZ()) {
-                        if (Block.isBlockVisible(scene, entity)) {
-                            org.joml.Vector4f region = entity.getTextureRegion();
-                            grouped.computeIfAbsent(region, k -> new ArrayList<>()).add(entity);
+                Map<Integer, Map<Vector4f, List<Entity>>> chunkMap = modelChunkMap.get(model);
+                if (chunkMap == null)
+                    continue;
+
+                Map<Vector4f, List<Entity>> textureMap = chunkMap.get(chunkKey);
+                if (textureMap == null || textureMap.isEmpty())
+                    continue;
+
+                for (Mesh mesh : model.getMeshList()) {
+                    glBindVertexArray(mesh.getVaoId());
+
+                    for (Map.Entry<Vector4f, List<Entity>> groupEntry : textureMap.entrySet()) {
+                        for (Entity entity : groupEntry.getValue()) {
+                            entity.updateModelMatrix();
+                            uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
+                            glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
                         }
                     }
-                }
-                // Se nel modello ci sono entity appartenenti a questo chunk, esegui il
-                // rendering
-                if (!grouped.isEmpty()) {
-                    for (Mesh mesh : model.getMeshList()) {
-                        glBindVertexArray(mesh.getVaoId());
-                        for (Map.Entry<org.joml.Vector4f, List<Entity>> groupEntry : grouped.entrySet()) {
-                            for (Entity entity : groupEntry.getValue()) {
-                                entity.updateModelMatrix();
-                                uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
-                                glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-                            }
-                        }
-                        glBindVertexArray(0);
-                    }
+
+                    glBindVertexArray(0);
                 }
             }
         }
+
         shaderProgram.unbind();
     }
-    */
 
     private void createUniforms() {
         uniformsMap = new UniformsMap(shaderProgram.getProgramId());
@@ -155,4 +127,5 @@ public class SceneRender {
         uniformsMap.createUniform("txtSampler");
         uniformsMap.createUniform("viewMatrix");
     }
+    
 }

@@ -39,9 +39,8 @@ public class Engine {
     }
 
     private void run() {
-        // Tempo fisso per update e render
-        final double nsPerUpdate = 1e9 / targetUps; // ad es. 33,33 ms per update
-        final double nsPerFrame = targetFps > 0 ? 1e9 / targetFps : 0; // ad es. 16,66 ms per frame per 60fps
+        final double nsPerUpdate = 1e9 / targetUps;
+        final double nsPerFrame = targetFps > 0 ? 1e9 / targetFps : 0;
 
         long lastTime = System.nanoTime();
         long lastUpdateTime = lastTime;
@@ -53,15 +52,12 @@ public class Engine {
             window.pollEvents();
             long now = System.nanoTime();
 
-            // Update: esegue gli update (world generation, logica) solo quando è passato il
-            // tempo necessario
             if (now - lastUpdateTime >= nsPerUpdate) {
                 long updateDiffMillis = (now - lastUpdateTime) / 1_000_000L;
                 appLogic.update(window, scene, updateDiffMillis);
                 lastUpdateTime = now;
             }
 
-            // Input e Render: esegue input e rendering se è passato il tempo per un frame
             if (targetFps <= 0 || now - lastFrameTime >= nsPerFrame) {
                 long frameDiffMillis = (now - lastFrameTime) / 1_000_000L;
                 appLogic.input(window, scene, (float) frameDiffMillis);
@@ -71,7 +67,6 @@ public class Engine {
                 lastFrameTime = now;
             }
 
-            // Aggiorna il contatore FPS ogni secondo
             if (now - fpsTimer >= 1e9) {
                 window.setTitle("Minecraft | FPS: " + frames);
                 frames = 0;

@@ -45,9 +45,9 @@ public class Chunk {
     }
 
     private int calculateTerrainHeight(int localX, int localZ) {
-        double noise1 = Math.sin(localX * 0.1) * 10;
-        double noise2 = Math.cos(localZ * 0.2) * 8;
-        double noise3 = Math.sin(localX * 0.05 + localZ * 0.05) * 15;
+        double noise1 = Math.sin(localX * 0.1) * 2;
+        double noise2 = Math.cos(localZ * 0.2) * 3;
+        double noise3 = Math.sin(localX * 0.05 + localZ * 0.05) * 4;
 
         return 64 + (int) (noise1 + noise2 + noise3);
     }

@@ -1,7 +1,11 @@
 package core;
 
 import org.joml.Vector2f;
+import org.lwjgl.BufferUtils;
+
 import static org.lwjgl.glfw.GLFW.*;
+
+import java.nio.DoubleBuffer;
 
 public class MouseInput {
     private Vector2f currentPos, displVec, previousPos;
@@ -30,15 +34,26 @@ public class MouseInput {
         return displVec;
     }
 
-    public void input() {
+    public void input(long windowHandle) {
         displVec.set(0, 0);
+
+        DoubleBuffer xPosBuffer = BufferUtils.createDoubleBuffer(1);
+        DoubleBuffer yPosBuffer = BufferUtils.createDoubleBuffer(1);
+        glfwGetCursorPos(windowHandle, xPosBuffer, yPosBuffer);
+
+        float newX = (float) xPosBuffer.get(0);
+        float newY = (float) yPosBuffer.get(0);
+
         if (previousPos.x < 0 || previousPos.y < 0) {
-            previousPos.set(currentPos);
-            return;
+            previousPos.set(newX, newY);
         }
-        displVec.x = currentPos.x - previousPos.x;
-        displVec.y = currentPos.y - previousPos.y;
-        previousPos.set(currentPos);
+
+        displVec.x = newX - previousPos.x;
+        displVec.y = newY - previousPos.y;
+
+        glfwSetCursorPos(windowHandle, 1280 / 2.0, 720 / 2.0);
+
+        previousPos.set(1280 / 2.0f, 720 / 2.0f);
     }
 
     public boolean isLeftButtonPressed() {

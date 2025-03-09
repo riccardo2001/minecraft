@@ -5,7 +5,7 @@ import java.lang.Math;
 
 public class Camera {
     private Vector3f position, direction, right, up;
-    private Vector2f rotation; // rotation.x = pitch, rotation.y = yaw
+    private Vector2f rotation;
     private Matrix4f viewMatrix;
     private Frustum frustum;
 

@@ -38,8 +38,7 @@ public class Main implements IAppLogic {
 
     @Override
     public void input(Window window, Scene scene, float diffTimeMillis) {
-        // Aggiorna il movimento del mouse
-        window.getMouseInput().input();
+        window.getMouseInput().input(window.getWindowHandle());
 
         float move = diffTimeMillis * MOVEMENT_SPEED;
         Camera camera = scene.getCamera();

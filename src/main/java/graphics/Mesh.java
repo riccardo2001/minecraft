@@ -21,7 +21,7 @@ public class Mesh {
         vboIdList = new ArrayList<>();
         vaoId = glGenVertexArrays();
         glBindVertexArray(vaoId);
-        // Positions VBO
+
         int vboId = glGenBuffers();
         vboIdList.add(vboId);
         FloatBuffer posBuffer = MemoryUtil.memAllocFloat(positions.length);
@@ -30,7 +30,7 @@ public class Mesh {
         glBufferData(GL_ARRAY_BUFFER, posBuffer, GL_STATIC_DRAW);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 3, GL_FLOAT, false, 0, 0);
-        // Texture Coordinates VBO
+
         vboId = glGenBuffers();
         vboIdList.add(vboId);
         FloatBuffer texBuffer = MemoryUtil.memAllocFloat(textCoords.length);
@@ -39,7 +39,7 @@ public class Mesh {
         glBufferData(GL_ARRAY_BUFFER, texBuffer, GL_STATIC_DRAW);
         glEnableVertexAttribArray(1);
         glVertexAttribPointer(1, 2, GL_FLOAT, false, 0, 0);
-        // Indices VBO
+
         vboId = glGenBuffers();
         vboIdList.add(vboId);
         IntBuffer indicesBuffer = MemoryUtil.memAllocInt(indices.length);

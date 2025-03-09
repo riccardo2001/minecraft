@@ -21,11 +21,9 @@ public class Scene {
     private static Camera camera;
     private static World world;
 
-    // Aggiungi questi campi per memorizzare il chunk corrente del giocatore
     private int currentCenterChunkX = Integer.MIN_VALUE;
     private int currentCenterChunkZ = Integer.MIN_VALUE;
 
-    // Cubo a 24 vertici (6 facce x 4 vertici)
     private static final float[] POSITIONS = {
             -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
             0.5f, 0.5f, -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f,
@@ -101,10 +99,6 @@ public class Scene {
         return blockEntity;
     }
 
-    /**
-     * Cleanup di un chunk: per ogni blocco, se esiste un entity associato, lo
-     * rimuove.
-     */
     public void cleanupChunk(Chunk chunk) {
         Block[][][] blocks = chunk.getBlocks();
         for (int x = 0; x < blocks.length; x++) {
@@ -122,7 +116,6 @@ public class Scene {
         int newCenterChunkX = (int) Math.floor(playerX / (Chunk.WIDTH * Block.BLOCK_SIZE));
         int newCenterChunkZ = (int) Math.floor(playerZ / (Chunk.DEPTH * Block.BLOCK_SIZE));
 
-        // Aggiorna solo se il centro in chunk Ã¨ cambiato
         if (newCenterChunkX == currentCenterChunkX && newCenterChunkZ == currentCenterChunkZ) {
             return;
         }
@@ -132,7 +125,6 @@ public class Scene {
         Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
         int renderDistance = world.getRenderDistance();
 
-        // Raccogli i chunk da rimuovere (oltre il renderDistance)
         Set<ChunkPosition> chunksToRemove = new HashSet<>();
         for (Map.Entry<ChunkPosition, Chunk> entry : loadedChunks.entrySet()) {
             ChunkPosition chunkPos = entry.getKey();
@@ -150,7 +142,6 @@ public class Scene {
             loadedChunks.remove(posToRemove);
         }
 
-        // Aggiungi i chunk mancanti intorno al nuovo centro
         for (int dx = -renderDistance; dx <= renderDistance; dx++) {
             for (int dz = -renderDistance; dz <= renderDistance; dz++) {
                 int chunkX = currentCenterChunkX + dx;
@@ -165,7 +156,7 @@ public class Scene {
     }
 
     private static float[] generateUVCoordinates(Vector4f region) {
-        float[] textCoords = new float[48]; // 6 facce * 4 vertici * 2 coordinate
+        float[] textCoords = new float[48];
         for (int face = 0; face < 6; face++) {
             int offset = face * 8;
             textCoords[offset] = region.x;

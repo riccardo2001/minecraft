@@ -34,7 +34,11 @@ public class MouseInput {
         return displVec;
     }
 
-    public void input(long windowHandle) {
+    public void input(long windowHandle, boolean isPaused) {
+        if (isPaused) {
+            return; // Non catturare il movimento del mouse se in pausa
+        }
+
         displVec.set(0, 0);
 
         DoubleBuffer xPosBuffer = BufferUtils.createDoubleBuffer(1);

@@ -145,6 +145,7 @@ find ~/minecraft/src/main/java -type f -name "*.java" -exec cat {} + > output.tx
 - `L-CTRL`: Move down
 - `SPACE`: Move up
 - `MOUSE`: Look around
+- `ESC`: Pause/Resume
 
 
 ## ⚠️ Warning

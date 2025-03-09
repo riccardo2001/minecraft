@@ -1,7 +1,6 @@
 package core;
 
 import org.lwjgl.glfw.GLFWVidMode;
-import org.lwjgl.glfw.GLFWErrorCallback;
 import java.util.concurrent.Callable;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -15,6 +14,8 @@ public class Window {
     private String title;
     private Callable<Void> resizeFunc;
     private MouseInput mouseInput;
+    private boolean isCursorVisible = false;
+    private boolean isPaused = false;
 
     public static class WindowOptions {
         public boolean compatibleProfile;
@@ -54,11 +55,14 @@ public class Window {
             throw new RuntimeException("Failed to create GLFW window");
         }
         glfwSetFramebufferSizeCallback(windowHandle, (window, w, h) -> resized(w, h));
+
+        // Gestione del tasto ESC per alternare la visibilità del cursore e la pausa
         glfwSetKeyCallback(windowHandle, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
-                glfwSetWindowShouldClose(windowHandle, true);
+                togglePause();
             }
         });
+
         glfwMakeContextCurrent(windowHandle);
         if (opts.fps > 0) {
             glfwSwapInterval(0);
@@ -66,11 +70,25 @@ public class Window {
             glfwSwapInterval(1);
         }
         glfwShowWindow(windowHandle);
+
         int[] wArr = new int[1], hArr = new int[1];
         glfwGetFramebufferSize(windowHandle, wArr, hArr);
         width = wArr[0];
         height = hArr[0];
+
         mouseInput = new MouseInput(windowHandle);
+    }
+
+    private void togglePause() {
+        isPaused = !isPaused;
+        if (isPaused) {
+            glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+            isCursorVisible = true;
+        } else {
+            glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            isCursorVisible = false;
+        }
     }
 
     protected void resized(int w, int h) {
@@ -87,6 +105,7 @@ public class Window {
     }
 
     public void update() {
+        renderPauseOverlay();
         glfwSwapBuffers(windowHandle);
     }
 
@@ -123,13 +142,22 @@ public class Window {
         glfwFreeCallbacks(windowHandle);
         glfwDestroyWindow(windowHandle);
         glfwTerminate();
-        GLFWErrorCallback callback = glfwSetErrorCallback(null);
-        if (callback != null) {
-            callback.free();
-        }
     }
 
     public String getTitle() {
         return title;
+    }
+
+    public void renderPauseOverlay() {
+        if (isPaused) {
+            glClearColor(0.3f, 0.3f, 0.3f, 0.7f);
+            glClear(GL_COLOR_BUFFER_BIT);
+        } else {
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        }
+    }
+
+    public boolean isCursorVisible() {
+        return isCursorVisible;
     }
 }

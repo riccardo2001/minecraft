@@ -38,32 +38,38 @@ public class Main implements IAppLogic {
 
     @Override
     public void input(Window window, Scene scene, float diffTimeMillis) {
-        window.getMouseInput().input(window.getWindowHandle());
+        boolean isPaused = window.isCursorVisible();
+
+        if (!isPaused) {
+            window.getMouseInput().input(window.getWindowHandle(), false); 
+        }
 
         float move = diffTimeMillis * MOVEMENT_SPEED;
         Camera camera = scene.getCamera();
         MouseInput mouseInput = window.getMouseInput();
         Vector2f displVec = mouseInput.getDisplVec();
 
-        if (window.isKeyPressed(GLFW_KEY_W)) {
-            camera.moveForward(move);
-        } else if (window.isKeyPressed(GLFW_KEY_S)) {
-            camera.moveBackwards(move);
-        }
-        if (window.isKeyPressed(GLFW_KEY_A)) {
-            camera.moveLeft(move);
-        } else if (window.isKeyPressed(GLFW_KEY_D)) {
-            camera.moveRight(move);
-        }
-        if (window.isKeyPressed(GLFW_KEY_SPACE)) {
-            camera.moveUp(move);
-        } else if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
-            camera.moveDown(move);
-        }
+        if (!isPaused) {
+            if (window.isKeyPressed(GLFW_KEY_W)) {
+                camera.moveForward(move);
+            } else if (window.isKeyPressed(GLFW_KEY_S)) {
+                camera.moveBackwards(move);
+            }
+            if (window.isKeyPressed(GLFW_KEY_A)) {
+                camera.moveLeft(move);
+            } else if (window.isKeyPressed(GLFW_KEY_D)) {
+                camera.moveRight(move);
+            }
+            if (window.isKeyPressed(GLFW_KEY_SPACE)) {
+                camera.moveUp(move);
+            } else if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
+                camera.moveDown(move);
+            }
 
-        camera.addRotation(
-                (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),
-                (float) Math.toRadians(displVec.y * MOUSE_SENSITIVITY));
+            camera.addRotation(
+                    (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),
+                    (float) Math.toRadians(displVec.y * MOUSE_SENSITIVITY));
+        }
     }
 
     @Override

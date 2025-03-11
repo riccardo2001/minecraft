@@ -1,7 +1,6 @@
 package scene;
 
 import java.util.*;
-import org.joml.Vector4f;
 import core.Window;
 import graphics.Mesh;
 import graphics.Model;
@@ -10,7 +9,6 @@ import graphics.TextureAtlas;
 import graphics.TextureCacheAtlas;
 import graphics.UniformsMap;
 import world.Block;
-import world.Chunk;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
@@ -49,75 +47,81 @@ public class SceneRender {
         glActiveTexture(GL_TEXTURE0);
         textureAtlas.bind();
 
-        Map<Model, Map<Integer, Map<Vector4f, List<Entity>>>> modelChunkMap = new HashMap<>();
-        Collection<Model> models = scene.getModelMap().values();
-
+        // Rendi tutti i chunk visibili
         var loadedChunks = scene.getWorld().getLoadedChunks();
-
-        for (Model model : models) {
-            List<Entity> entities = model.getEntitiesList();
-            for (Entity entity : entities) {
-                if (Block.isBlockVisible(scene, entity)) {
-                    int entityChunkX = (int) Math.floor(entity.getPosition().x / (Chunk.WIDTH * Block.BLOCK_SIZE));
-                    int entityChunkZ = (int) Math.floor(entity.getPosition().z / (Chunk.DEPTH * Block.BLOCK_SIZE));
-
-                    int chunkKey = entityChunkX * 10000 + entityChunkZ;
-
-                    Map<Integer, Map<Vector4f, List<Entity>>> chunkMap = modelChunkMap.computeIfAbsent(model,
-                            k -> new HashMap<>());
-
-                    Map<Vector4f, List<Entity>> textureMap = chunkMap.computeIfAbsent(chunkKey, k -> new HashMap<>());
-
-                    Vector4f region = entity.getTextureRegion();
-                    textureMap.computeIfAbsent(region, k -> new ArrayList<>()).add(entity);
+        
+        // Troviamo il modello per i chunk
+        Model chunkModel = scene.getModelMap().get("chunk");
+        if (chunkModel != null) {
+            // Cicliamo attraverso tutti i chunk caricati
+            for (var entry : loadedChunks.entrySet()) {
+                var chunk = entry.getValue();
+                
+                // Controlla se il chunk è visibile
+                if (!Block.isChunkVisible(scene, chunk)) {
+                    continue;
                 }
-            }
-        }
-
-        for (var entry : loadedChunks.entrySet()) {
-            var chunk = entry.getValue();
-
-            float chunkMinX = chunk.getChunkX() * Chunk.WIDTH * Block.BLOCK_SIZE;
-            float chunkMinY = 0;
-            float chunkMinZ = chunk.getChunkZ() * Chunk.DEPTH * Block.BLOCK_SIZE;
-            float chunkMaxX = (chunk.getChunkX() + 1) * Chunk.WIDTH * Block.BLOCK_SIZE;
-            float chunkMaxY = Chunk.HEIGHT * Block.BLOCK_SIZE;
-            float chunkMaxZ = (chunk.getChunkZ() + 1) * Chunk.DEPTH * Block.BLOCK_SIZE;
-            var chunkMin = new org.joml.Vector3f(chunkMinX, chunkMinY, chunkMinZ);
-            var chunkMax = new org.joml.Vector3f(chunkMaxX, chunkMaxY, chunkMaxZ);
-
-            if (!scene.getCamera().getFrustum().isBoxInFrustum(chunkMin, chunkMax)) {
-                continue;
-            }
-
-            int chunkKey = chunk.getChunkX() * 10000 + chunk.getChunkZ();
-
-            for (Model model : models) {
-                Map<Integer, Map<Vector4f, List<Entity>>> chunkMap = modelChunkMap.get(model);
-                if (chunkMap == null)
-                    continue;
-
-                Map<Vector4f, List<Entity>> textureMap = chunkMap.get(chunkKey);
-                if (textureMap == null || textureMap.isEmpty())
-                    continue;
-
-                for (Mesh mesh : model.getMeshList()) {
-                    glBindVertexArray(mesh.getVaoId());
-
-                    for (Map.Entry<Vector4f, List<Entity>> groupEntry : textureMap.entrySet()) {
-                        for (Entity entity : groupEntry.getValue()) {
-                            entity.updateModelMatrix();
-                            uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
-                            glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-                        }
+                
+                // Se il chunk è stato modificato, costruisci la sua mesh
+                if (chunk.isDirty()) {
+                    chunk.buildMesh(scene.getWorld(), scene);
+                }
+                
+                // Ottieni l'entità del chunk
+                Entity chunkEntity = chunk.getChunkEntity();
+                if (chunkEntity != null) {
+                    // Renderizza l'entità del chunk
+                    for (Mesh mesh : chunkModel.getMeshList()) {
+                        glBindVertexArray(mesh.getVaoId());
+                        
+                        chunkEntity.updateModelMatrix();
+                        uniformsMap.setUniform("modelMatrix", chunkEntity.getModelMatrix());
+                        glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+                        
+                        glBindVertexArray(0);
                     }
-
-                    glBindVertexArray(0);
                 }
             }
         }
+
+        // Renderizza eventuali altre entità non relative ai chunk
+        renderOtherEntities(scene);
 
         shaderProgram.unbind();
+    }
+    
+    private void renderOtherEntities(Scene scene) {
+        // Mappa modelli -> entità per le entità che non sono chunk
+        Map<Model, List<Entity>> modelEntityMap = new HashMap<>();
+        
+        // Raggruppiamo le entità per modello
+        for (var entry : scene.getModelMap().entrySet()) {
+            if (!entry.getKey().equals("chunk")) {
+                Model model = entry.getValue();
+                List<Entity> entities = model.getEntitiesList();
+                if (!entities.isEmpty()) {
+                    modelEntityMap.put(model, entities);
+                }
+            }
+        }
+        
+        // Renderizza ogni modello con tutte le sue entità
+        for (var entry : modelEntityMap.entrySet()) {
+            Model model = entry.getKey();
+            List<Entity> entities = entry.getValue();
+            
+            for (Mesh mesh : model.getMeshList()) {
+                glBindVertexArray(mesh.getVaoId());
+                
+                for (Entity entity : entities) {
+                    entity.updateModelMatrix();
+                    uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
+                    glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+                }
+                
+                glBindVertexArray(0);
+            }
+        }
     }
 
     private void createUniforms() {
@@ -127,5 +131,4 @@ public class SceneRender {
         uniformsMap.createUniform("txtSampler");
         uniformsMap.createUniform("viewMatrix");
     }
-    
 }

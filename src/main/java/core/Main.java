@@ -18,7 +18,7 @@ public class Main implements IAppLogic {
         Window.WindowOptions opts = new Window.WindowOptions();
         opts.width = 1280;
         opts.height = 720;
-        opts.fps = 100;
+        opts.fps = 1000;
         opts.ups = Engine.TARGET_UPS;
         opts.compatibleProfile = false;
         Engine gameEng = new Engine("Minecraft", opts, main);

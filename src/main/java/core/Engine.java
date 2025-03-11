@@ -41,7 +41,7 @@ public class Engine {
     private void run() {
         final double nsPerUpdate = 1e9 / targetUps;
         final double nsPerFrame = targetFps > 0 ? 1e9 / targetFps : 0;
-
+        
         long lastTime = System.nanoTime();
         long lastUpdateTime = lastTime;
         long lastFrameTime = lastTime;

@@ -1,14 +1,20 @@
 package world;
 
+import scene.Entity;
+import scene.Scene;
+import org.joml.Vector4f;
+
 public class Chunk {
-    public static final int WIDTH = 16;
+    public static final int WIDTH = 32;
     public static final int HEIGHT = 256;
-    public static final int DEPTH = 16;
+    public static final int DEPTH = 32;
 
     private final int chunkX;
     private final int chunkZ;
     private Block[][][] blocks;
     private boolean isDirty;
+    private ChunkMesh chunkMesh;
+    private Entity chunkEntity;
 
     public Chunk(int chunkX, int chunkZ) {
         this.chunkX = chunkX;
@@ -23,20 +29,14 @@ public class Chunk {
     private void generateInitialTerrain() {
         // Ciclo corretto: x da 0 a WIDTH, z da 0 a DEPTH, y da 0 a HEIGHT.
         for (int x = 0; x < WIDTH; x++) {
-            for (int z = 0; z < DEPTH; z++) { // Usa DEPTH qui!
+            for (int z = 0; z < DEPTH; z++) {
                 int terrainHeight = calculateTerrainHeight(x, z);
 
-                for (int y = 0; y < HEIGHT; y++) { // Usa HEIGHT per la verticale
+                for (int y = 0; y < HEIGHT; y++) {
                     Block.BlockType blockType = determineBlockType(x, y, z, terrainHeight);
 
                     if (blockType != Block.BlockType.AIR) {
-                        float worldX = (chunkX * WIDTH + x) * Block.BLOCK_SIZE;
-                        float worldY = y * Block.BLOCK_SIZE;
-                        float worldZ = (chunkZ * DEPTH + z) * Block.BLOCK_SIZE;
-
                         Block block = new Block(blockType);
-                        block.setWorldPosition(worldX, worldY, worldZ);
-
                         setBlock(x, y, z, block);
                     }
                 }
@@ -99,5 +99,42 @@ public class Chunk {
 
     public Block[][][] getBlocks() {
         return blocks;
+    }
+    
+    public void buildMesh(World world, Scene scene) {
+        if (chunkMesh == null) {
+            chunkMesh = new ChunkMesh();
+        }
+        
+        chunkMesh.buildMesh(this, world);
+        
+        if (chunkEntity == null) {
+            // Crea un'entità per il chunk
+            String entityId = "chunk_" + chunkX + "_" + chunkZ;
+            chunkEntity = new Entity(entityId, "chunk", new Vector4f(0, 0, 1, 1));
+            chunkEntity.setPosition(
+                chunkX * WIDTH * Block.BLOCK_SIZE, 
+                0, 
+                chunkZ * DEPTH * Block.BLOCK_SIZE
+            );
+            chunkEntity.updateModelMatrix();
+            
+            // Aggiungi l'entità al model
+            if (scene != null) {
+                if (!scene.getModelMap().containsKey("chunk")) {
+                    scene.registerChunkModel(chunkMesh.getMesh());
+                }
+                scene.addChunkEntity(chunkEntity);
+            }
+        } else if (scene != null) {
+            // Aggiorna la mesh esistente
+            scene.updateChunkMesh(chunkEntity.getId(), chunkMesh.getMesh());
+        }
+        
+        resetDirtyFlag();
+    }
+    
+    public Entity getChunkEntity() {
+        return chunkEntity;
     }
 }

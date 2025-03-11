@@ -24,19 +24,8 @@ public class Scene {
     private int currentCenterChunkX = Integer.MIN_VALUE;
     private int currentCenterChunkZ = Integer.MIN_VALUE;
 
-    private static final float[] POSITIONS = {
-            -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f,
-            -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f, -0.5f,
-            -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f,
-            -0.5f, 0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, -0.5f, 0.5f, -0.5f, 0.5f, 0.5f,
-            0.5f, 0.5f, 0.5f, 0.5f, -0.5f, 0.5f, 0.5f, -0.5f, -0.5f, 0.5f, 0.5f, -0.5f
-    };
-
-    private static final int[] INDICES = {
-            0, 1, 2, 0, 2, 3, 4, 5, 6, 4, 6, 7, 8, 9, 10, 8, 10, 11,
-            12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 20, 21, 22, 20, 22, 23
-    };
+    // Rimuovere la definizione dei vertici e indici statici del blocco
+    // poiché ora utilizziamo ChunkMesh per generare la geometria
 
     static {
         modelMap = new HashMap<>();
@@ -83,32 +72,45 @@ public class Scene {
         return camera;
     }
 
-    public static Entity createEntity(BlockType type) {
-        String modelId = "block-model-" + type.name().toLowerCase();
-        String entityId = "block-entity-" + type.name().toLowerCase() + "-" + System.currentTimeMillis();
-        Model blockModel = modelMap.get(modelId);
-        if (blockModel == null) {
-            Vector4f textureRegion = textureCacheAtlas.getTextureRegion(type);
-            float[] textCoords = generateUVCoordinates(textureRegion);
-            Mesh mesh = new Mesh(POSITIONS, textCoords, INDICES);
-            blockModel = new Model(modelId, List.of(mesh));
-            addModel(blockModel);
+    // Modifichiamo questo metodo per utilizzare l'atlante delle texture
+    public static Vector4f getBlockTextureRegion(BlockType type, Block.Face face) {
+        // Utilizziamo textureCacheAtlas per ottenere le coordinate corrette
+        // In base al tipo di blocco e alla faccia
+        String textureKey;
+        
+        switch (type) {
+            case GRASS:
+                if (face == Block.Face.TOP) {
+                    textureKey = "grass_top";
+                } else if (face == Block.Face.BOTTOM) {
+                    textureKey = "dirt";
+                } else {
+                    textureKey = "grass_side";
+                }
+                break;
+            case DIRT:
+                textureKey = "dirt";
+                break;
+            case STONE:
+                textureKey = "stone";
+                break;
+            case WOOD:
+                textureKey = "wood";
+                break;
+            default:
+                textureKey = "default";
+                break;
         }
-        Entity blockEntity = new Entity(entityId, blockModel.getId(), textureCacheAtlas.getTextureRegion(type));
-        addEntity(blockEntity);
-        return blockEntity;
+        
+        // Otteniamo le coordinate UV dall'atlas
+        return textureCacheAtlas.getTextureRegion(textureKey);
     }
 
     public void cleanupChunk(Chunk chunk) {
-        Block[][][] blocks = chunk.getBlocks();
-        for (int x = 0; x < blocks.length; x++) {
-            for (int y = 0; y < blocks[x].length; y++) {
-                for (int z = 0; z < blocks[x][y].length; z++) {
-                    Block block = blocks[x][y][z];
-                    if (block != null && block.getEntity() != null)
-                        removeEntity(block.getEntity().getId());
-                }
-            }
+        // Rimuovi l'entità del chunk se esiste
+        Entity chunkEntity = chunk.getChunkEntity();
+        if (chunkEntity != null) {
+            removeEntity(chunkEntity.getId());
         }
     }
 
@@ -134,6 +136,7 @@ public class Scene {
                 chunksToRemove.add(chunkPos);
             }
         }
+        
         for (ChunkPosition posToRemove : chunksToRemove) {
             Chunk chunkToRemove = loadedChunks.get(posToRemove);
             if (chunkToRemove != null) {
@@ -150,25 +153,12 @@ public class Scene {
                 if (!loadedChunks.containsKey(chunkPos)) {
                     Chunk chunk = new Chunk(chunkX, chunkZ);
                     loadedChunks.put(chunkPos, chunk);
+                    
+                    // Genera immediatamente la mesh per il nuovo chunk
+                    chunk.buildMesh(world, this);
                 }
             }
         }
-    }
-
-    private static float[] generateUVCoordinates(Vector4f region) {
-        float[] textCoords = new float[48];
-        for (int face = 0; face < 6; face++) {
-            int offset = face * 8;
-            textCoords[offset] = region.x;
-            textCoords[offset + 1] = region.y;
-            textCoords[offset + 2] = region.x;
-            textCoords[offset + 3] = region.w;
-            textCoords[offset + 4] = region.z;
-            textCoords[offset + 5] = region.w;
-            textCoords[offset + 6] = region.z;
-            textCoords[offset + 7] = region.y;
-        }
-        return textCoords;
     }
 
     public World getWorld() {
@@ -195,6 +185,51 @@ public class Scene {
                 int last = list.size() - 1;
                 list.set(index, list.get(last));
                 list.remove(last);
+            }
+        }
+    }
+
+    public void registerChunkModel(Mesh mesh) {
+        // Verificare se il modello chunk esiste già
+        Model existingModel = modelMap.get("chunk");
+        if (existingModel != null) {
+            // Aggiungere la mesh al modello esistente
+            existingModel.getMeshList().clear(); // Rimuovi le mesh esistenti
+            existingModel.getMeshList().add(mesh);
+        } else {
+            // Creare un nuovo modello per i chunk
+            List<Mesh> meshes = new ArrayList<>();
+            meshes.add(mesh);
+            Model model = new Model("chunk", meshes);
+            modelMap.put("chunk", model);
+        }
+    }
+
+    public void addChunkEntity(Entity entity) {
+        // Aggiunge l'entità alla lista delle entità e al modello chunk
+        entityMap.put(entity.getId(), entity);
+        
+        Model model = modelMap.get("chunk");
+        if (model != null) {
+            model.getEntitiesList().add(entity);
+        }
+    }
+
+    public void updateChunkMesh(String chunkId, Mesh newMesh) {
+        // Aggiorna solo la mesh del chunk specificato
+        Entity entity = entityMap.get(chunkId);
+        if (entity != null) {
+            Model chunkModel = modelMap.get(entity.getModelId());
+            if (chunkModel != null) {
+                // Trova l'indice dell'entità nel modello
+                int index = chunkModel.getEntitiesList().indexOf(entity);
+                if (index >= 0 && index < chunkModel.getMeshList().size()) {
+                    // Sostituisci la mesh all'indice corrispondente
+                    if (chunkModel.getMeshList().get(index) != null) {
+                        chunkModel.getMeshList().get(index).cleanup();
+                    }
+                    chunkModel.getMeshList().set(index, newMesh);
+                }
             }
         }
     }

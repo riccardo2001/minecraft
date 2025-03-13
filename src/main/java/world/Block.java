@@ -14,7 +14,8 @@ public class Block {
         GRASS,
         DIRT,
         STONE,
-        WOOD
+        WOOD,
+        LEAVES
     }
 
     public enum Face {
@@ -34,7 +35,8 @@ public class Block {
     }
 
     public boolean isOpaque() {
-        return type != BlockType.AIR;
+        // Le foglie non sono completamente opache, così si possono vedere altre foglie
+        return type != BlockType.AIR && type != BlockType.LEAVES;
     }
     
     /**

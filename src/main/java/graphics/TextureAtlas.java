@@ -60,9 +60,7 @@ public class TextureAtlas {
     }
 
     public float[] getUVCoordinates(int x, int y) {
-        // Calcola le coordinate UV normalizzate (0.0 - 1.0)
-        // Aggiungiamo un piccolo margine per evitare problemi di bleeding
-        float margin = 0.001f;
+        float margin = 0.000f;
         
         float uMin = (x * tileSize + margin) / (float) atlasWidth;
         float vMin = (y * tileSize + margin) / (float) atlasHeight;

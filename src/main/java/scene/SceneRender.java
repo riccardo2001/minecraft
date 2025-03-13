@@ -50,14 +50,11 @@ public class SceneRender {
         // Rendi tutti i chunk visibili
         var loadedChunks = scene.getWorld().getLoadedChunks();
         
-        // Troviamo il modello per i chunk
         Model chunkModel = scene.getModelMap().get("chunk");
         if (chunkModel != null) {
-            // Cicliamo attraverso tutti i chunk caricati
             for (var entry : loadedChunks.entrySet()) {
                 var chunk = entry.getValue();
                 
-                // Controlla se il chunk è visibile
                 if (!Block.isChunkVisible(scene, chunk)) {
                     continue;
                 }
@@ -94,7 +91,6 @@ public class SceneRender {
         // Mappa modelli -> entità per le entità che non sono chunk
         Map<Model, List<Entity>> modelEntityMap = new HashMap<>();
         
-        // Raggruppiamo le entità per modello
         for (var entry : scene.getModelMap().entrySet()) {
             if (!entry.getKey().equals("chunk")) {
                 Model model = entry.getValue();

@@ -5,9 +5,9 @@ import scene.Scene;
 import org.joml.Vector4f;
 
 public class Chunk {
-    public static final int WIDTH = 32;
+    public static final int WIDTH = 16;
     public static final int HEIGHT = 256;
-    public static final int DEPTH = 32;
+    public static final int DEPTH = 16;
 
     private final int chunkX;
     private final int chunkZ;

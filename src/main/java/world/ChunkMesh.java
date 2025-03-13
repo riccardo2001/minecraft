@@ -72,10 +72,8 @@ public class ChunkMesh {
             mesh.cleanup();
         }
         
-        // Crea la nuova mesh
-        if (positions.size() > 0) {
-            mesh = new Mesh(posArray, texArray, indArray);
-        }
+        // Crea la nuova mesh (anche se vuota)
+        mesh = new Mesh(posArray, texArray, indArray);
     }
     
     private int addFaceToMesh(
@@ -92,7 +90,6 @@ public class ChunkMesh {
         float y2 = y1 + blockSize;
         float z2 = z1 + blockSize;
         
-        // Aggiungi i vertici in base alla faccia
         switch (face) {
             case TOP:
                 positions.add(x1); positions.add(y2); positions.add(z1);
@@ -132,11 +129,9 @@ public class ChunkMesh {
                 break;
         }
         
-        // Aggiungi coordinate texture in base al tipo di blocco e alla faccia
         Vector4f textureRegion = getTextureRegion(blockType, face);
-        addTextureCoords(textureCoords, textureRegion);
+        addTextureCoords(textureCoords, textureRegion, face);
         
-        // Aggiungi gli indici
         indices.add(indexStart);
         indices.add(indexStart + 1);
         indices.add(indexStart + 2);
@@ -147,23 +142,54 @@ public class ChunkMesh {
         return indexStart + 4;
     }
     
-    private void addTextureCoords(List<Float> textureCoords, Vector4f region) {
+    private void addTextureCoords(List<Float> textureCoords, Vector4f region, Block.Face face) {
         // Coordinate texture (U,V) per ogni vertice della faccia
-        // Utilizza region per mappare l'UV corretto dall'atlante texture
         float minU = region.x;
         float minV = region.y;
         float maxU = region.z;
         float maxV = region.w;
         
-        // Ordine corretto: in basso a sinistra, in basso a destra, in alto a destra, in alto a sinistra
-        textureCoords.add(minU); textureCoords.add(maxV); // In basso a sinistra
-        textureCoords.add(maxU); textureCoords.add(maxV); // In basso a destra
-        textureCoords.add(maxU); textureCoords.add(minV); // In alto a destra
-        textureCoords.add(minU); textureCoords.add(minV); // In alto a sinistra
+        switch (face) {
+            case FRONT:
+                textureCoords.add(minU); textureCoords.add(maxV); // In basso a sinistra
+                textureCoords.add(maxU); textureCoords.add(maxV); // In basso a destra
+                textureCoords.add(maxU); textureCoords.add(minV); // In alto a destra
+                textureCoords.add(minU); textureCoords.add(minV); // In alto a sinistra
+                break;
+            case BACK:
+                textureCoords.add(minU); textureCoords.add(maxV); // In basso a sinistra
+                textureCoords.add(minU); textureCoords.add(minV); // In alto a sinistra
+                textureCoords.add(maxU); textureCoords.add(minV); // In alto a destra
+                textureCoords.add(maxU); textureCoords.add(maxV); // In basso a destra
+                break;
+            case LEFT:
+                textureCoords.add(maxU); textureCoords.add(maxV); // In basso a sinistra
+                textureCoords.add(minU); textureCoords.add(maxV); // In basso a destra
+                textureCoords.add(minU); textureCoords.add(minV); // In alto a destra
+                textureCoords.add(maxU); textureCoords.add(minV); // In alto a sinistra
+                break;
+            case RIGHT:
+                textureCoords.add(minU); textureCoords.add(maxV); // In basso a sinistra
+                textureCoords.add(minU); textureCoords.add(minV); // In alto a sinistra
+                textureCoords.add(maxU); textureCoords.add(minV); // In alto a destra
+                textureCoords.add(maxU); textureCoords.add(maxV); // In basso a destra
+                break;
+            case TOP:
+                textureCoords.add(minU); textureCoords.add(maxV); // In basso a sinistra
+                textureCoords.add(minU); textureCoords.add(minV); // In alto a sinistra
+                textureCoords.add(maxU); textureCoords.add(minV); // In alto a destra
+                textureCoords.add(maxU); textureCoords.add(maxV); // In basso a destra
+                break;
+            case BOTTOM:
+                textureCoords.add(minU); textureCoords.add(maxV); // In basso a sinistra
+                textureCoords.add(maxU); textureCoords.add(maxV); // In basso a destra
+                textureCoords.add(maxU); textureCoords.add(minV); // In alto a destra
+                textureCoords.add(minU); textureCoords.add(minV); // In alto a sinistra
+                break;
+        }
     }
     
     private Vector4f getTextureRegion(Block.BlockType blockType, Block.Face face) {
-        // Utilizziamo il metodo aggiornato della classe Scene
         return Scene.getBlockTextureRegion(blockType, face);
     }
 }

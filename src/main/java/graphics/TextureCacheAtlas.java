@@ -22,17 +22,13 @@ public class TextureCacheAtlas {
 
     private Map<String, int[]> initializeTexturePositions() {
         Map<String, int[]> positions = new HashMap<>();
-        positions.put("bedrock", new int[] { 1, 1 });
-        positions.put("stone", new int[] { 1, 0 });
-        positions.put("grass_top", new int[] { 2, 0 });
-        positions.put("grass_side", new int[] { 3, 0 });
-        positions.put("dirt", new int[] { 2, 0 });
-        positions.put("default", new int[] { 0, 0 });
-        positions.put("grass_top", new int[] { 0, 0 });
-        positions.put("grass_side", new int[] { 1, 0 });
-        positions.put("dirt", new int[] { 2, 0 });
-        positions.put("stone", new int[] { 3, 0 });
-        positions.put("wood", new int[] { 4, 0 });
+        // Rimuovo le definizioni duplicate e correggo le posizioni
+        positions.put("grass_top", new int[] { 7, 14 });
+        positions.put("grass_side", new int[] { 6, 14 });
+        positions.put("dirt", new int[] { 8, 5 });
+        positions.put("stone", new int[] { 19, 6 });
+        positions.put("wood", new int[] { 1, 13 });
+        positions.put("leaves", new int[] { 9, 12 });
         positions.put("bedrock", new int[] { 1, 1 });
         positions.put("default", new int[] { 0, 1 });
         return positions;
@@ -57,6 +53,7 @@ public class TextureCacheAtlas {
                 case DIRT -> "dirt";
                 case STONE -> "stone";
                 case WOOD -> "wood";
+                case LEAVES -> "leaves";
                 default -> "default";
             };
             if (!texturePositions.containsKey(textureName)) {
@@ -66,18 +63,17 @@ public class TextureCacheAtlas {
             int[] pos = texturePositions.get(textureName);
             float[] baseUV = atlas.getUVCoordinates(pos[0], pos[1]);
             
-            // Assicuriamoci che le coordinate UV siano normalizzate correttamente
             return new Vector4f(baseUV[0], baseUV[1], baseUV[2], baseUV[3]);
         });
     }
 
     public Vector4f getTextureRegion(String textureName) {
         return textureRegionStringCache.computeIfAbsent(textureName, t -> {
-            String actualTextureName = textureName; // Creiamo una variabile locale che possiamo modificare
+            String actualTextureName = textureName; 
             
             if (!texturePositions.containsKey(actualTextureName)) {
                 System.err.println("Warning: Texture '" + actualTextureName + "' not found. Using default.");
-                actualTextureName = "default"; // Modifichiamo questa variabile invece del parametro
+                actualTextureName = "default";
             }
             
             int[] pos = texturePositions.get(actualTextureName);

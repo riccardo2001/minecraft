@@ -24,9 +24,6 @@ public class Scene {
     private int currentCenterChunkX = Integer.MIN_VALUE;
     private int currentCenterChunkZ = Integer.MIN_VALUE;
 
-    // Rimuovere la definizione dei vertici e indici statici del blocco
-    // poiché ora utilizziamo ChunkMesh per generare la geometria
-
     static {
         modelMap = new HashMap<>();
         entityMap = new HashMap<>();
@@ -35,7 +32,7 @@ public class Scene {
     public Scene(int width, int height) {
         projection = new Projection(width, height);
         camera = new Camera();
-        textureCacheAtlas = new TextureCacheAtlas("textures/atlas.png", 256, 256, 16);
+        textureCacheAtlas = new TextureCacheAtlas("textures/atlas2.png", 512, 512, 16);
     }
 
     public static void addEntity(Entity entity) {
@@ -72,10 +69,7 @@ public class Scene {
         return camera;
     }
 
-    // Modifichiamo questo metodo per utilizzare l'atlante delle texture
     public static Vector4f getBlockTextureRegion(BlockType type, Block.Face face) {
-        // Utilizziamo textureCacheAtlas per ottenere le coordinate corrette
-        // In base al tipo di blocco e alla faccia
         String textureKey;
         
         switch (type) {
@@ -96,6 +90,9 @@ public class Scene {
                 break;
             case WOOD:
                 textureKey = "wood";
+                break;
+            case LEAVES:
+                textureKey = "leaves";
                 break;
             default:
                 textureKey = "default";
@@ -190,6 +187,11 @@ public class Scene {
     }
 
     public void registerChunkModel(Mesh mesh) {
+        if (mesh == null) {
+            System.err.println("Tentativo di registrare una mesh null");
+            return;
+        }
+        
         // Verificare se il modello chunk esiste già
         Model existingModel = modelMap.get("chunk");
         if (existingModel != null) {
@@ -216,6 +218,11 @@ public class Scene {
     }
 
     public void updateChunkMesh(String chunkId, Mesh newMesh) {
+        if (newMesh == null) {
+            System.err.println("Tentativo di aggiornare con mesh null per chunk: " + chunkId);
+            return;
+        }
+        
         // Aggiorna solo la mesh del chunk specificato
         Entity entity = entityMap.get(chunkId);
         if (entity != null) {

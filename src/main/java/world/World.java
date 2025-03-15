@@ -5,7 +5,7 @@ import java.util.Map;
 
 public class World {
     private Map<ChunkPosition, Chunk> loadedChunks;
-    private int renderDistance = 1;
+    private int renderDistance = 4;
 
     public World() {
         this.loadedChunks = new HashMap<>();
@@ -23,8 +23,7 @@ public class World {
                 ChunkPosition chunkPos = new ChunkPosition(chunkX, chunkZ);
 
                 if (!loadedChunks.containsKey(chunkPos)) {
-                    Chunk chunk = new Chunk(chunkX, chunkZ);
-                    loadedChunks.put(chunkPos, chunk);
+                    loadedChunks.put(chunkPos, new Chunk(chunkX, chunkZ));
                 }
             }
         }

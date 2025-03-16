@@ -9,6 +9,7 @@ public class Chunk {
     public static final int WIDTH = 16;
     public static final int HEIGHT = 256;
     public static final int DEPTH = 16;
+    private final World world;
 
     private final int chunkX;
     private final int chunkZ;
@@ -18,26 +19,24 @@ public class Chunk {
     private Entity chunkEntity;
     private Random random;
 
-    private static final int BASE_HEIGHT = 64;
-
-    public Chunk(int chunkX, int chunkZ) {
+    public Chunk(int chunkX, int chunkZ, World world) {
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
+        this.world = world;
         this.blocks = new Block[WIDTH][HEIGHT][DEPTH];
         this.isDirty = true;
-
-        long seed = ((long) chunkX << 32) | ((long) chunkZ & 0xFFFFFFFFL);
-        this.random = new Random(seed ^ 0xDEADBEEF);
-
+        long seed = (chunkX * 0x5F24F) ^ (chunkZ * 0x9E3779B9L) ^ 0xDEADBEEFL;
+        random = new Random(seed);
         generateInitialTerrain();
     }
 
     private void generateInitialTerrain() {
-        int[][] heightMap = generateHeightMap();
 
         for (int x = 0; x < WIDTH; x++) {
             for (int z = 0; z < DEPTH; z++) {
-                int terrainHeight = heightMap[x][z];
+                int globalX = chunkX * WIDTH + x;
+                int globalZ = chunkZ * DEPTH + z;
+                int terrainHeight = world.getTerrainHeight(globalX, globalZ);
 
                 for (int y = 0; y < HEIGHT; y++) {
                     Block.BlockType blockType;
@@ -52,27 +51,12 @@ public class Chunk {
             }
         }
 
-        generateTrees(heightMap);
+        generateTrees();
     }
 
-    private int[][] generateHeightMap() {
-        int[][] heightMap = new int[WIDTH][DEPTH];
-
-        for (int x = 0; x < WIDTH; x++) {
-            for (int z = 0; z < DEPTH; z++) {
-                heightMap[x][z] = BASE_HEIGHT;
-            }
-        }
-
-        return heightMap;
-    }
-
-    private void generateTrees(int[][] heightMap) {
-        long dynamicSeed = System.nanoTime() ^ (chunkX * 73856093L) ^ (chunkZ * 19349663L);
-        Random treeRandom = new Random(dynamicSeed);
-
-        int maxTrees = 5;
-        int numTrees = treeRandom.nextInt(maxTrees + 1);
+    private void generateTrees() {
+        int maxTrees = 5 + random.nextInt(4);
+        int numTrees = random.nextInt(maxTrees + 1);
 
         numTrees += (int) (Math.abs(Math.sin(chunkX * chunkZ * 0.1)) * 2);
         numTrees = Math.min(numTrees, 8);
@@ -88,19 +72,20 @@ public class Chunk {
 
             int treeX, treeZ;
             do {
-                treeX = 3 + treeRandom.nextInt(WIDTH - 6);
-                treeZ = 3 + treeRandom.nextInt(DEPTH - 6);
+                treeX = 3 + random.nextInt(WIDTH - 6) + random.nextInt(2);
+                treeZ = 3 + random.nextInt(DEPTH - 6) + random.nextInt(2);
             } while (positionTried[treeX][treeZ]);
 
             positionTried[treeX][treeZ] = true;
 
-            int terrainHeight = heightMap[treeX][treeZ];
+            int globalX = chunkX * WIDTH + treeX;
+            int globalZ = chunkZ * DEPTH + treeZ;
+            int terrainHeight = world.getTerrainHeight(globalX, globalZ);
 
             Block block = getBlock(treeX, terrainHeight - 1, treeZ);
             if (block != null && block.getType() == Block.BlockType.GRASS) {
                 if (terrainHeight + 11 < HEIGHT && hasEnoughSpace(treeX, terrainHeight, treeZ)) {
-
-                    generateTree(treeX, terrainHeight, treeZ, treeRandom.nextInt(3));
+                    generateTree(treeX, terrainHeight, treeZ, random.nextInt(3));
                     alberiGenerati++;
                 }
             }
@@ -227,28 +212,25 @@ public class Chunk {
         if (chunkMesh == null) {
             chunkMesh = new ChunkMesh();
         }
-
         chunkMesh.buildMesh(this, world);
 
+        String modelId = "chunk_model_" + chunkX + "_" + chunkZ;
         if (chunkEntity == null) {
             String entityId = "chunk_" + chunkX + "_" + chunkZ;
-            chunkEntity = new Entity(entityId, "chunk", new Vector4f(0, 0, 1, 1));
+            chunkEntity = new Entity(entityId, modelId, new Vector4f(0, 0, 1, 1));
             chunkEntity.setPosition(
                     chunkX * WIDTH * Block.BLOCK_SIZE,
                     0,
                     chunkZ * DEPTH * Block.BLOCK_SIZE);
             chunkEntity.updateModelMatrix();
 
-            if (scene != null) {
-                if (!scene.getModelMap().containsKey("chunk")) {
-                    scene.registerChunkModel(chunkMesh.getMesh());
-                }
-                scene.addChunkEntity(chunkEntity);
+            if (!scene.getModelMap().containsKey(modelId)) {
+                scene.registerChunkModel(modelId, chunkMesh.getMesh());
             }
+            scene.addChunkEntity(chunkEntity);
         } else if (scene != null) {
             scene.updateChunkMesh(chunkEntity.getId(), chunkMesh.getMesh());
         }
-
         resetDirtyFlag();
     }
 

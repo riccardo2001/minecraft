@@ -9,6 +9,8 @@ import graphics.TextureAtlas;
 import graphics.TextureCacheAtlas;
 import graphics.UniformsMap;
 import world.Block;
+import world.Chunk;
+import world.ChunkPosition;
 
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL13.*;
@@ -48,31 +50,33 @@ public class SceneRender {
         textureAtlas.bind();
 
         var loadedChunks = scene.getWorld().getLoadedChunks();
-        
-        Model chunkModel = scene.getModelMap().get("chunk");
-        if (chunkModel != null) {
-            for (var entry : loadedChunks.entrySet()) {
-                var chunk = entry.getValue();
-                
-                if (!Block.isChunkVisible(scene, chunk)) {
-                    continue;
-                }
-                
+
+        var modelMap = scene.getModelMap();
+        for (var entry : loadedChunks.entrySet()) {
+            ChunkPosition chunkPos = entry.getKey();
+            Chunk chunk = entry.getValue();
+
+            if (!Block.isChunkVisible(scene, chunk))
+                continue;
+
+            String modelId = "chunk_model_" + chunkPos.getX() + "_" + chunkPos.getZ(); // ID unico
+            Model chunkModel = modelMap.get(modelId);
+
+            if (chunkModel == null) {
                 if (chunk.isDirty()) {
                     chunk.buildMesh(scene.getWorld(), scene);
                 }
-                
-                Entity chunkEntity = chunk.getChunkEntity();
-                if (chunkEntity != null) {
-                    for (Mesh mesh : chunkModel.getMeshList()) {
-                        glBindVertexArray(mesh.getVaoId());
-                        
-                        chunkEntity.updateModelMatrix();
-                        uniformsMap.setUniform("modelMatrix", chunkEntity.getModelMatrix());
-                        glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
-                        
-                        glBindVertexArray(0);
-                    }
+                continue;
+            }
+
+            Entity chunkEntity = chunk.getChunkEntity();
+            if (chunkEntity != null) {
+                for (Mesh mesh : chunkModel.getMeshList()) {
+                    glBindVertexArray(mesh.getVaoId());
+                    chunkEntity.updateModelMatrix();
+                    uniformsMap.setUniform("modelMatrix", chunkEntity.getModelMatrix());
+                    glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
+                    glBindVertexArray(0);
                 }
             }
         }
@@ -81,33 +85,36 @@ public class SceneRender {
 
         shaderProgram.unbind();
     }
-    
+
     private void renderOtherEntities(Scene scene) {
         Map<Model, List<Entity>> modelEntityMap = new HashMap<>();
-        
+
         for (var entry : scene.getModelMap().entrySet()) {
-            if (!entry.getKey().equals("chunk")) {
-                Model model = entry.getValue();
-                List<Entity> entities = model.getEntitiesList();
-                if (!entities.isEmpty()) {
-                    modelEntityMap.put(model, entities);
-                }
+            String modelId = entry.getKey();
+            // Esclude tutti i modelli di chunk (assumendo che abbiano un prefisso)
+            if (modelId.startsWith("chunk_model_"))
+                continue;
+
+            Model model = entry.getValue();
+            List<Entity> entities = model.getEntitiesList();
+            if (!entities.isEmpty()) {
+                modelEntityMap.put(model, entities);
             }
         }
-        
+
         for (var entry : modelEntityMap.entrySet()) {
             Model model = entry.getKey();
             List<Entity> entities = entry.getValue();
-            
+
             for (Mesh mesh : model.getMeshList()) {
                 glBindVertexArray(mesh.getVaoId());
-                
+
                 for (Entity entity : entities) {
                     entity.updateModelMatrix();
                     uniformsMap.setUniform("modelMatrix", entity.getModelMatrix());
                     glDrawElements(GL_TRIANGLES, mesh.getNumVertices(), GL_UNSIGNED_INT, 0);
                 }
-                
+
                 glBindVertexArray(0);
             }
         }

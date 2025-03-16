@@ -130,7 +130,7 @@ public class Scene {
                 int chunkZ = currentCenterChunkZ + dz;
                 ChunkPosition chunkPos = new ChunkPosition(chunkX, chunkZ);
                 if (!loadedChunks.containsKey(chunkPos)) {
-                    Chunk chunk = new Chunk(chunkX, chunkZ);
+                    Chunk chunk = new Chunk(chunkX, chunkZ, world);
                     loadedChunks.put(chunkPos, chunk);
 
                     chunk.buildMesh(world, this);
@@ -139,51 +139,33 @@ public class Scene {
         }
     }
 
-    public void registerChunkModel(Mesh mesh) {
-        if (mesh == null) {
-            System.err.println("Tentativo di registrare una mesh null");
-            return;
-        }
-
-        Model existingModel = modelMap.get("chunk");
-        if (existingModel != null) {
-            existingModel.getMeshList().clear();
-            existingModel.getMeshList().add(mesh);
-        } else {
-            // Creare un nuovo modello per i chunk
+    public void registerChunkModel(String modelId, Mesh mesh) {
+        if (mesh == null) return;
+        Model existingModel = modelMap.get(modelId);
+        if (existingModel == null) {
             List<Mesh> meshes = new ArrayList<>();
             meshes.add(mesh);
-            Model model = new Model("chunk", meshes);
-            modelMap.put("chunk", model);
+            Model model = new Model(modelId, meshes);
+            modelMap.put(modelId, model);
         }
     }
 
     public void addChunkEntity(Entity entity) {
         entityMap.put(entity.getId(), entity);
 
-        Model model = modelMap.get("chunk");
+        Model model = modelMap.get(entity.getModelId());
         if (model != null) {
             model.getEntitiesList().add(entity);
         }
     }
 
     public void updateChunkMesh(String chunkId, Mesh newMesh) {
-        if (newMesh == null) {
-            System.err.println("Tentativo di aggiornare con mesh null per chunk: " + chunkId);
-            return;
-        }
-
         Entity entity = entityMap.get(chunkId);
         if (entity != null) {
-            Model chunkModel = modelMap.get(entity.getModelId());
+            Model chunkModel = modelMap.get(entity.getModelId()); // Usa modelId unico
             if (chunkModel != null) {
-                int index = chunkModel.getEntitiesList().indexOf(entity);
-                if (index >= 0 && index < chunkModel.getMeshList().size()) {
-                    if (chunkModel.getMeshList().get(index) != null) {
-                        chunkModel.getMeshList().get(index).cleanup();
-                    }
-                    chunkModel.getMeshList().set(index, newMesh);
-                }
+                chunkModel.getMeshList().clear();
+                chunkModel.getMeshList().add(newMesh);
             }
         }
     }

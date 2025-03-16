@@ -26,14 +26,6 @@ public class MouseInput {
         });
     }
 
-    public Vector2f getCurrentPos() {
-        return currentPos;
-    }
-
-    public Vector2f getDisplVec() {
-        return displVec;
-    }
-
     public void input(long windowHandle, boolean isPaused) {
         if (isPaused) {
             return;
@@ -58,6 +50,14 @@ public class MouseInput {
         glfwSetCursorPos(windowHandle, 1280 / 2.0, 720 / 2.0);
 
         previousPos.set(1280 / 2.0f, 720 / 2.0f);
+    }
+
+    public Vector2f getCurrentPos() {
+        return currentPos;
+    }
+
+    public Vector2f getDisplVec() {
+        return displVec;
     }
 
     public boolean isLeftButtonPressed() {

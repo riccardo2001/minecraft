@@ -24,6 +24,17 @@ public class World {
         return renderDistance;
     }
 
+    public int getTerrainHeight(int globalX, int globalZ) {
+        double hillFactor = 20.0;
+        double frequency = 0.05;
+        
+        double noiseX = globalX * frequency;
+        double noiseZ = globalZ * frequency;
+        
+        double height = Math.sin(noiseX) * Math.cos(noiseZ) * hillFactor;
+        return 64 + (int) height;
+    }
+
     public void generateInitialWorld(float centerX, float centerZ) {
         int centerChunkX = (int) Math.floor(centerX / (Chunk.WIDTH * Block.BLOCK_SIZE));
         int centerChunkZ = (int) Math.floor(centerZ / (Chunk.DEPTH * Block.BLOCK_SIZE));
@@ -36,7 +47,7 @@ public class World {
                 ChunkPosition chunkPos = new ChunkPosition(chunkX, chunkZ);
 
                 if (!loadedChunks.containsKey(chunkPos)) {
-                    loadedChunks.put(chunkPos, new Chunk(chunkX, chunkZ));
+                    loadedChunks.put(chunkPos, new Chunk(chunkX, chunkZ, this));
                 }
             }
         }

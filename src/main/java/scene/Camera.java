@@ -4,15 +4,13 @@ import org.joml.*;
 import java.lang.Math;
 
 public class Camera {
-    private Vector3f position, direction, right, up;
+    private Vector3f position, up;
     private Vector2f rotation;
     private Matrix4f viewMatrix;
     private Frustum frustum;
 
     public Camera() {
         position = new Vector3f();
-        direction = new Vector3f();
-        right = new Vector3f();
         up = new Vector3f();
         rotation = new Vector2f();
         viewMatrix = new Matrix4f();
@@ -29,30 +27,6 @@ public class Camera {
         recalculate();
     }
 
-    public void moveForward(float inc) {
-        viewMatrix.positiveZ(direction).negate().mul(inc);
-        position.add(direction);
-        recalculate();
-    }
-
-    public void moveBackwards(float inc) {
-        viewMatrix.positiveZ(direction).negate().mul(inc);
-        position.sub(direction);
-        recalculate();
-    }
-
-    public void moveLeft(float inc) {
-        viewMatrix.positiveX(right).mul(inc);
-        position.sub(right);
-        recalculate();
-    }
-
-    public void moveRight(float inc) {
-        viewMatrix.positiveX(right).mul(inc);
-        position.add(right);
-        recalculate();
-    }
-
     public void moveUp(float inc) {
         viewMatrix.positiveY(up).mul(inc);
         position.add(up);
@@ -65,11 +39,48 @@ public class Camera {
         recalculate();
     }
 
+    public void dash(Vector3f direction, float intensity) {
+        if (direction.lengthSquared() <= 0)
+            return;
+        direction.normalize().mul(intensity);
+        position.add(direction);
+        recalculate();
+    }
+
     private void recalculate() {
         viewMatrix.identity()
                 .rotateX(rotation.x)
                 .rotateY(rotation.y)
                 .translate(-position.x, -position.y, -position.z);
+    }
+
+    public void move(Vector3f direction, float amount) {
+        if (direction.lengthSquared() <= 0)
+            return;
+        direction.normalize().mul(amount);
+        position.add(direction);
+        recalculate();
+    }
+
+    public Vector3f getForward() {
+        Vector3f forward = new Vector3f();
+        viewMatrix.positiveZ(forward).negate();
+        forward.y = 0; 
+        return forward.normalize();
+    }
+
+    public Vector3f getLeft() {
+        Vector3f left = new Vector3f();
+        viewMatrix.positiveX(left).negate();
+        left.y = 0; 
+        return left.normalize();
+    }
+
+    public Vector3f getRight() {
+        Vector3f right = new Vector3f();
+        viewMatrix.positiveX(right);
+        right.y = 0; 
+        return right.normalize();
     }
 
     public void setPosition(float x, float y, float z) {

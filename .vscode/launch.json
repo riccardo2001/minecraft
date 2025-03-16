@@ -15,7 +15,7 @@
             "type": "java",
             "name": "Main",
             "request": "launch",
-            "mainClass": "core.Main",
+            "mainClass": "main.Main",
             "projectName": "minecraft",
             "vmArgs": "-XstartOnFirstThread"
         }

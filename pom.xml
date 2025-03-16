@@ -166,7 +166,7 @@
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>libs/</classpathPrefix>
                             <mainClass>
-								core.Main
+								main.Main
                             </mainClass>
                         </manifest>
                     </archive>

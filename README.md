@@ -137,39 +137,45 @@ mvn clean install -Pwindows
 mvn clean install -Pmacos-arm64
 ```
 
-
 ## Starting the Game
 
-Run the `Main` class (in the core package) to start the game.
+Run the `Main` class (in the main package) to start the game.
 
 ```java
 public static void main(String[] args) {
     Main main = new Main();
-    Engine gameEng = new Engine("Minecraft ", new Window.WindowOptions(), main);
+    Window.WindowOptions opts = new Window.WindowOptions();
+
+    opts.width = 1280;
+    opts.height = 720;
+    opts.fps = 1000;
+    opts.ups = Engine.TARGET_UPS;
+    opts.compatibleProfile = false;
+
+    Engine gameEng = new Engine("Minecraft", opts, main);
     gameEng.start();
 }
 ```
 
 ## Java prompt starting
 
--  MacOs
+- MacOs
 
 ```bash
 java -XstartOnFirstThread -jar minecraft-1.0.jar
 ```
 
--  Windows
+- Windows
 
 ```bash
 java -jar minecraft-1.0.jar
 ```
 
-
 ## Bash command for class union
-```bash
-find ~/minecraft/src/main/java -type f -name "*.java" -exec cat {} + > output.txt 
-```
 
+```bash
+find ~/minecraft/src/main/java -type f -name "*.java" -exec cat {} + > output.txt
+```
 
 ## ⚠️ Warning
 

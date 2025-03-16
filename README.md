@@ -24,8 +24,9 @@ A simple Minecraft clone developed in Java using LWJGL (Lightweight Java Game Li
 - `S`: Move backward
 - `A`: Move left
 - `D`: Move right
-- `L-CTRL`: Move down
 - `SPACE`: Move up
+- `L-SHIFT`: Move down
+- `L-CTRL`: Dash
 - `MOUSE`: Look around
 - `ESC`: Pause/Resume
 

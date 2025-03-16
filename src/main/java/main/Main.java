@@ -5,6 +5,7 @@ import scene.Camera;
 import scene.Scene;
 import world.World;
 import org.joml.Vector2f;
+import org.joml.Vector3f;
 
 import core.Engine;
 import core.IAppLogic;
@@ -58,22 +59,32 @@ public class Main implements IAppLogic {
         MouseInput mouseInput = window.getMouseInput();
         Vector2f displVec = mouseInput.getDisplVec();
 
+        Vector3f moveDir = new Vector3f();
+
         if (!isPaused) {
-            if (window.isKeyPressed(GLFW_KEY_W)) {
-                camera.moveForward(move);
-            } else if (window.isKeyPressed(GLFW_KEY_S)) {
-                camera.moveBackwards(move);
+            if (window.isKeyPressed(GLFW_KEY_W))
+                moveDir.add(camera.getForward().mul(1));
+            if (window.isKeyPressed(GLFW_KEY_S))
+                moveDir.add(camera.getForward().mul(-1));
+            if (window.isKeyPressed(GLFW_KEY_A))
+                moveDir.add(camera.getLeft().mul(1));
+            if (window.isKeyPressed(GLFW_KEY_D))
+                moveDir.add(camera.getRight().mul(1));
+
+            if (moveDir.lengthSquared() > 0) {
+                moveDir.normalize();
             }
-            if (window.isKeyPressed(GLFW_KEY_A)) {
-                camera.moveLeft(move);
-            } else if (window.isKeyPressed(GLFW_KEY_D)) {
-                camera.moveRight(move);
+
+            camera.move(moveDir, move);
+
+            if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL) && moveDir.lengthSquared() > 0) {
+                camera.dash(moveDir, 0.04f);
             }
-            if (window.isKeyPressed(GLFW_KEY_SPACE)) {
+
+            if (window.isKeyPressed(GLFW_KEY_SPACE))
                 camera.moveUp(move);
-            } else if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL)) {
+            if (window.isKeyPressed(GLFW_KEY_LEFT_SHIFT))
                 camera.moveDown(move);
-            }
 
             camera.addRotation(
                     (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),

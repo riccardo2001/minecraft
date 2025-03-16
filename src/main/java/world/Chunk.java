@@ -32,26 +32,6 @@ public class Chunk {
         generateInitialTerrain();
     }
 
-    public boolean isDirty() {
-        return isDirty;
-    }
-
-    public void resetDirtyFlag() {
-        isDirty = false;
-    }
-
-    public int getChunkX() {
-        return chunkX;
-    }
-
-    public int getChunkZ() {
-        return chunkZ;
-    }
-
-    public Block[][][] getBlocks() {
-        return blocks;
-    }
-
     private void generateInitialTerrain() {
         int[][] heightMap = generateHeightMap();
 
@@ -78,7 +58,6 @@ public class Chunk {
     private int[][] generateHeightMap() {
         int[][] heightMap = new int[WIDTH][DEPTH];
 
-        // Terreno piatto con altezza costante
         for (int x = 0; x < WIDTH; x++) {
             for (int z = 0; z < DEPTH; z++) {
                 heightMap[x][z] = BASE_HEIGHT;
@@ -97,8 +76,6 @@ public class Chunk {
 
         numTrees += (int) (Math.abs(Math.sin(chunkX * chunkZ * 0.1)) * 2);
         numTrees = Math.min(numTrees, 8);
-
-        System.out.println("Tentativo di generare " + numTrees + " alberi nel chunk " + chunkX + "," + chunkZ);
 
         int alberiGenerati = 0;
         int tentativi = 0;
@@ -246,23 +223,6 @@ public class Chunk {
         return Block.BlockType.AIR;
     }
 
-    public void setBlock(int x, int y, int z, Block block) {
-        if (isValidPosition(x, y, z)) {
-            blocks[x][y][z] = block;
-            isDirty = true;
-        }
-    }
-
-    public Block getBlock(int x, int y, int z) {
-        return isValidPosition(x, y, z) ? blocks[x][y][z] : null;
-    }
-
-    private boolean isValidPosition(int x, int y, int z) {
-        return x >= 0 && x < WIDTH &&
-                y >= 0 && y < HEIGHT &&
-                z >= 0 && z < DEPTH;
-    }
-
     public void buildMesh(World world, Scene scene) {
         if (chunkMesh == null) {
             chunkMesh = new ChunkMesh();
@@ -295,4 +255,42 @@ public class Chunk {
     public Entity getChunkEntity() {
         return chunkEntity;
     }
+
+    public boolean isDirty() {
+        return isDirty;
+    }
+
+    public void resetDirtyFlag() {
+        isDirty = false;
+    }
+
+    public int getChunkX() {
+        return chunkX;
+    }
+
+    public int getChunkZ() {
+        return chunkZ;
+    }
+
+    public Block[][][] getBlocks() {
+        return blocks;
+    }
+
+    public void setBlock(int x, int y, int z, Block block) {
+        if (isValidPosition(x, y, z)) {
+            blocks[x][y][z] = block;
+            isDirty = true;
+        }
+    }
+
+    public Block getBlock(int x, int y, int z) {
+        return isValidPosition(x, y, z) ? blocks[x][y][z] : null;
+    }
+
+    private boolean isValidPosition(int x, int y, int z) {
+        return x >= 0 && x < WIDTH &&
+                y >= 0 && y < HEIGHT &&
+                z >= 0 && z < DEPTH;
+    }
+
 }

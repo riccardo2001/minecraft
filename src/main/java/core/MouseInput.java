@@ -36,7 +36,7 @@ public class MouseInput {
 
     public void input(long windowHandle, boolean isPaused) {
         if (isPaused) {
-            return; // Non catturare il movimento del mouse se in pausa
+            return;
         }
 
         displVec.set(0, 0);

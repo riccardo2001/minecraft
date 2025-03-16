@@ -66,9 +66,6 @@ public class TextureAtlas {
         float vMin = (y * tileSize + margin) / (float) atlasHeight;
         float uMax = ((x + 1) * tileSize - margin) / (float) atlasWidth;
         float vMax = ((y + 1) * tileSize - margin) / (float) atlasHeight;
-
-        // Debug output per verificare i valori
-        System.out.println("Texture UV coordinates: [" + uMin + ", " + vMin + ", " + uMax + ", " + vMax + "]");
         
         return new float[] { uMin, vMin, uMax, vMax };
     }

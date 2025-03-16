@@ -18,24 +18,6 @@ public class ShaderProgram {
         link(shaderModules);
     }
 
-    public void bind() {
-        glUseProgram(programId);
-    }
-
-    public void unbind() {
-        glUseProgram(0);
-    }
-
-    public void cleanup() {
-        unbind();
-        if (programId != 0)
-            glDeleteProgram(programId);
-    }
-
-    public int getProgramId() {
-        return programId;
-    }
-
     protected int createShader(String code, int type) {
         int shaderId = glCreateShader(type);
         if (shaderId == 0)
@@ -56,6 +38,24 @@ public class ShaderProgram {
             glDetachShader(programId, shaderId);
             glDeleteShader(shaderId);
         }
+    }
+
+    public void bind() {
+        glUseProgram(programId);
+    }
+
+    public void unbind() {
+        glUseProgram(0);
+    }
+
+    public void cleanup() {
+        unbind();
+        if (programId != 0)
+            glDeleteProgram(programId);
+    }
+
+    public int getProgramId() {
+        return programId;
     }
 
     public record ShaderModuleData(String shaderFile, int shaderType) {

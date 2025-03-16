@@ -27,21 +27,10 @@ public class Engine {
         running = true;
     }
 
-    private void cleanup() {
-        appLogic.cleanup();
-        window.cleanup();
-        render.cleanup();
-        scene.cleanup();
-    }
-
-    private void resize() {
-        scene.resize(window.getWidth(), window.getHeight());
-    }
-
     private void run() {
         final double nsPerUpdate = 1e9 / targetUps;
         final double nsPerFrame = targetFps > 0 ? 1e9 / targetFps : 0;
-        
+
         long lastTime = System.nanoTime();
         long lastUpdateTime = lastTime;
         long lastFrameTime = lastTime;
@@ -76,6 +65,17 @@ public class Engine {
             lastTime = now;
         }
         cleanup();
+    }
+
+    private void cleanup() {
+        appLogic.cleanup();
+        window.cleanup();
+        render.cleanup();
+        scene.cleanup();
+    }
+
+    private void resize() {
+        scene.resize(window.getWidth(), window.getHeight());
     }
 
     public void start() {

@@ -35,13 +35,9 @@ public class Block {
     }
 
     public boolean isOpaque() {
-        // Le foglie non sono completamente opache, così si possono vedere altre foglie
         return type != BlockType.AIR && type != BlockType.LEAVES;
     }
     
-    /**
-     * Verifica se una faccia del blocco dovrebbe essere renderizzata controllando se è adiacente a un blocco opaco
-     */
     public static boolean shouldRenderFace(World world, int x, int y, int z, Face face) {
         int checkX = x;
         int checkY = y;
@@ -63,7 +59,6 @@ public class Block {
     public static boolean isChunkVisible(Scene scene, Chunk chunk) {
         Camera camera = scene.getCamera();
 
-        // Ottieni le coordinate del chunk
         float chunkMinX = chunk.getChunkX() * Chunk.WIDTH * BLOCK_SIZE;
         float chunkMinY = 0;
         float chunkMinZ = chunk.getChunkZ() * Chunk.DEPTH * BLOCK_SIZE;
@@ -74,13 +69,11 @@ public class Block {
         var chunkMin = new org.joml.Vector3f(chunkMinX, chunkMinY, chunkMinZ);
         var chunkMax = new org.joml.Vector3f(chunkMaxX, chunkMaxY, chunkMaxZ);
 
-        // 1. Frustum Culling - verifica se il chunk è nel campo visivo della camera
         if (!camera.getFrustum().isBoxInFrustum(chunkMin, chunkMax)) {
             return false;
         }
 
-        // 2. Distance Culling - ignora chunk troppo lontani
-        float maxRenderDistanceSquared = 256.0f * 256.0f;  // 16 chunk di distanza al quadrato
+        float maxRenderDistanceSquared = 256.0f * 256.0f; 
         Vector3f cameraPos = camera.getPosition();
         Vector3f chunkCenterPos = new Vector3f(
             chunkMinX + (chunkMaxX - chunkMinX) / 2,

@@ -44,34 +44,25 @@ public class Scene {
         entityMap.put(entity.getId(), entity);
     }
 
-    public static void addModel(Model model) {
-        modelMap.put(model.getId(), model);
-    }
-
-    public void cleanup() {
-        modelMap.clear();
-        entityMap.clear();
-    }
-
-    public Map<String, Model> getModelMap() {
-        return modelMap;
-    }
-
-    public Projection getProjection() {
-        return projection;
-    }
-
-    public void resize(int width, int height) {
-        projection.updateProjMatrix(width, height);
-    }
-
-    public Camera getCamera() {
-        return camera;
+    public void removeEntity(String entityId) {
+        Entity entity = entityMap.remove(entityId);
+        if (entity == null)
+            return;
+        Model model = modelMap.get(entity.getModelId());
+        if (model != null) {
+            var list = model.getEntitiesList();
+            int index = list.indexOf(entity);
+            if (index != -1) {
+                int last = list.size() - 1;
+                list.set(index, list.get(last));
+                list.remove(last);
+            }
+        }
     }
 
     public static Vector4f getBlockTextureRegion(BlockType type, Block.Face face) {
         String textureKey;
-        
+
         switch (type) {
             case GRASS:
                 if (face == Block.Face.TOP) {
@@ -98,17 +89,8 @@ public class Scene {
                 textureKey = "default";
                 break;
         }
-        
-        // Otteniamo le coordinate UV dall'atlas
-        return textureCacheAtlas.getTextureRegion(textureKey);
-    }
 
-    public void cleanupChunk(Chunk chunk) {
-        // Rimuovi l'entità del chunk se esiste
-        Entity chunkEntity = chunk.getChunkEntity();
-        if (chunkEntity != null) {
-            removeEntity(chunkEntity.getId());
-        }
+        return textureCacheAtlas.getTextureRegion(textureKey);
     }
 
     public void updateWorldGeneration(float playerX, float playerZ) {
@@ -133,7 +115,7 @@ public class Scene {
                 chunksToRemove.add(chunkPos);
             }
         }
-        
+
         for (ChunkPosition posToRemove : chunksToRemove) {
             Chunk chunkToRemove = loadedChunks.get(posToRemove);
             if (chunkToRemove != null) {
@@ -150,12 +132,92 @@ public class Scene {
                 if (!loadedChunks.containsKey(chunkPos)) {
                     Chunk chunk = new Chunk(chunkX, chunkZ);
                     loadedChunks.put(chunkPos, chunk);
-                    
-                    // Genera immediatamente la mesh per il nuovo chunk
+
                     chunk.buildMesh(world, this);
                 }
             }
         }
+    }
+
+    public void registerChunkModel(Mesh mesh) {
+        if (mesh == null) {
+            System.err.println("Tentativo di registrare una mesh null");
+            return;
+        }
+
+        Model existingModel = modelMap.get("chunk");
+        if (existingModel != null) {
+            existingModel.getMeshList().clear();
+            existingModel.getMeshList().add(mesh);
+        } else {
+            // Creare un nuovo modello per i chunk
+            List<Mesh> meshes = new ArrayList<>();
+            meshes.add(mesh);
+            Model model = new Model("chunk", meshes);
+            modelMap.put("chunk", model);
+        }
+    }
+
+    public void addChunkEntity(Entity entity) {
+        entityMap.put(entity.getId(), entity);
+
+        Model model = modelMap.get("chunk");
+        if (model != null) {
+            model.getEntitiesList().add(entity);
+        }
+    }
+
+    public void updateChunkMesh(String chunkId, Mesh newMesh) {
+        if (newMesh == null) {
+            System.err.println("Tentativo di aggiornare con mesh null per chunk: " + chunkId);
+            return;
+        }
+
+        Entity entity = entityMap.get(chunkId);
+        if (entity != null) {
+            Model chunkModel = modelMap.get(entity.getModelId());
+            if (chunkModel != null) {
+                int index = chunkModel.getEntitiesList().indexOf(entity);
+                if (index >= 0 && index < chunkModel.getMeshList().size()) {
+                    if (chunkModel.getMeshList().get(index) != null) {
+                        chunkModel.getMeshList().get(index).cleanup();
+                    }
+                    chunkModel.getMeshList().set(index, newMesh);
+                }
+            }
+        }
+    }
+
+    public void cleanup() {
+        modelMap.clear();
+        entityMap.clear();
+    }
+
+    public void cleanupChunk(Chunk chunk) {
+        Entity chunkEntity = chunk.getChunkEntity();
+        if (chunkEntity != null) {
+            removeEntity(chunkEntity.getId());
+        }
+    }
+
+    public static void addModel(Model model) {
+        modelMap.put(model.getId(), model);
+    }
+
+    public Map<String, Model> getModelMap() {
+        return modelMap;
+    }
+
+    public Projection getProjection() {
+        return projection;
+    }
+
+    public void resize(int width, int height) {
+        projection.updateProjMatrix(width, height);
+    }
+
+    public Camera getCamera() {
+        return camera;
     }
 
     public World getWorld() {
@@ -168,76 +230,5 @@ public class Scene {
 
     public TextureCacheAtlas getTextureCacheAtlas() {
         return textureCacheAtlas;
-    }
-
-    public void removeEntity(String entityId) {
-        Entity entity = entityMap.remove(entityId);
-        if (entity == null)
-            return;
-        Model model = modelMap.get(entity.getModelId());
-        if (model != null) {
-            var list = model.getEntitiesList();
-            int index = list.indexOf(entity);
-            if (index != -1) {
-                int last = list.size() - 1;
-                list.set(index, list.get(last));
-                list.remove(last);
-            }
-        }
-    }
-
-    public void registerChunkModel(Mesh mesh) {
-        if (mesh == null) {
-            System.err.println("Tentativo di registrare una mesh null");
-            return;
-        }
-        
-        // Verificare se il modello chunk esiste già
-        Model existingModel = modelMap.get("chunk");
-        if (existingModel != null) {
-            // Aggiungere la mesh al modello esistente
-            existingModel.getMeshList().clear(); // Rimuovi le mesh esistenti
-            existingModel.getMeshList().add(mesh);
-        } else {
-            // Creare un nuovo modello per i chunk
-            List<Mesh> meshes = new ArrayList<>();
-            meshes.add(mesh);
-            Model model = new Model("chunk", meshes);
-            modelMap.put("chunk", model);
-        }
-    }
-
-    public void addChunkEntity(Entity entity) {
-        // Aggiunge l'entità alla lista delle entità e al modello chunk
-        entityMap.put(entity.getId(), entity);
-        
-        Model model = modelMap.get("chunk");
-        if (model != null) {
-            model.getEntitiesList().add(entity);
-        }
-    }
-
-    public void updateChunkMesh(String chunkId, Mesh newMesh) {
-        if (newMesh == null) {
-            System.err.println("Tentativo di aggiornare con mesh null per chunk: " + chunkId);
-            return;
-        }
-        
-        // Aggiorna solo la mesh del chunk specificato
-        Entity entity = entityMap.get(chunkId);
-        if (entity != null) {
-            Model chunkModel = modelMap.get(entity.getModelId());
-            if (chunkModel != null) {
-                // Trova l'indice dell'entità nel modello
-                int index = chunkModel.getEntitiesList().indexOf(entity);
-                if (index >= 0 && index < chunkModel.getMeshList().size()) {
-                    // Sostituisci la mesh all'indice corrispondente
-                    if (chunkModel.getMeshList().get(index) != null) {
-                        chunkModel.getMeshList().get(index).cleanup();
-                    }
-                    chunkModel.getMeshList().set(index, newMesh);
-                }
-            }
-        }
     }
 }

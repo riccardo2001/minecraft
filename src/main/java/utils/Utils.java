@@ -1,7 +1,8 @@
 package utils;
 
 import java.io.*;
-import core.Main;
+
+import main.Main;
 
 public class Utils {
     public static String readFile(String filePath) {

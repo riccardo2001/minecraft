@@ -2,7 +2,9 @@ package graphics;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.system.MemoryStack;
-import core.Main;
+
+import main.Main;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.*;

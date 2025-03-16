@@ -1,13 +1,18 @@
-package core;
+package main;
 
 import graphics.Render;
 import scene.Camera;
 import scene.Scene;
 import world.World;
 import org.joml.Vector2f;
+
+import core.Engine;
+import core.IAppLogic;
+import core.MouseInput;
+import core.Window;
+
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-
 
 public class Main implements IAppLogic {
     private static final float MOUSE_SENSITIVITY = 0.1f;
@@ -16,18 +21,15 @@ public class Main implements IAppLogic {
     public static void main(String[] args) {
         Main main = new Main();
         Window.WindowOptions opts = new Window.WindowOptions();
+
         opts.width = 1280;
         opts.height = 720;
         opts.fps = 1000;
         opts.ups = Engine.TARGET_UPS;
         opts.compatibleProfile = false;
+
         Engine gameEng = new Engine("Minecraft", opts, main);
         gameEng.start();
-    }
-
-    @Override
-    public void cleanup() {
-        // Cleanup eventuale
     }
 
     @Override
@@ -35,7 +37,7 @@ public class Main implements IAppLogic {
         scene.setWorld(new World());
         scene.getWorld().generateInitialWorld(0, 0);
         scene.getCamera().setPosition(0f, 75f, 0f);
-        System.out.println("World generated");
+        System.out.println("World generated...");
 
         System.out.println("OpenGL Vendor: " + glGetString(GL_VENDOR));
         System.out.println("OpenGL Renderer: " + glGetString(GL_RENDERER));
@@ -48,7 +50,7 @@ public class Main implements IAppLogic {
         boolean isPaused = window.isCursorVisible();
 
         if (!isPaused) {
-            window.getMouseInput().input(window.getWindowHandle(), false); 
+            window.getMouseInput().input(window.getWindowHandle(), false);
         }
 
         float move = diffTimeMillis * MOVEMENT_SPEED;
@@ -84,5 +86,10 @@ public class Main implements IAppLogic {
         float playerX = scene.getCamera().getPosition().x;
         float playerZ = scene.getCamera().getPosition().z;
         scene.updateWorldGeneration(playerX, playerZ);
+    }
+
+    @Override
+    public void cleanup() {
+        // Cleanup eventuale
     }
 }

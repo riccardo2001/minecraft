@@ -32,6 +32,26 @@ public class Chunk {
         generateInitialTerrain();
     }
 
+    public boolean isDirty() {
+        return isDirty;
+    }
+
+    public void resetDirtyFlag() {
+        isDirty = false;
+    }
+
+    public int getChunkX() {
+        return chunkX;
+    }
+
+    public int getChunkZ() {
+        return chunkZ;
+    }
+
+    public Block[][][] getBlocks() {
+        return blocks;
+    }
+
     private void generateInitialTerrain() {
         int[][] heightMap = generateHeightMap();
 
@@ -82,7 +102,7 @@ public class Chunk {
 
         int alberiGenerati = 0;
         int tentativi = 0;
-        int maxTentativi = 30;
+        int maxTentativi = 10;
 
         boolean[][] positionTried = new boolean[WIDTH][DEPTH];
 
@@ -108,8 +128,6 @@ public class Chunk {
                 }
             }
         }
-
-        System.out.println("Generati " + alberiGenerati + " alberi nel chunk " + chunkX + "," + chunkZ);
     }
 
     private boolean hasEnoughSpace(int x, int y, int z) {
@@ -203,11 +221,9 @@ public class Chunk {
                         int leafZ = z + dz;
 
                         if (isValidPosition(leafX, leafY, leafZ)) {
-                            // Non sostituire il tronco con le foglie
                             if (!(dx == 0 && dz == 0 && dy == 0)) {
                                 Block existingBlock = getBlock(leafX, leafY, leafZ);
                                 if (existingBlock == null || existingBlock.getType() == Block.BlockType.AIR) {
-                                    // Variazione casuale per rendere la chioma meno regolare
                                     if (random.nextDouble() > 0.1 || maxDistance <= leafSize) {
                                         setBlock(leafX, leafY, leafZ, new Block(Block.BlockType.LEAVES));
                                     }
@@ -247,26 +263,6 @@ public class Chunk {
                 z >= 0 && z < DEPTH;
     }
 
-    public boolean isDirty() {
-        return isDirty;
-    }
-
-    public void resetDirtyFlag() {
-        isDirty = false;
-    }
-
-    public int getChunkX() {
-        return chunkX;
-    }
-
-    public int getChunkZ() {
-        return chunkZ;
-    }
-
-    public Block[][][] getBlocks() {
-        return blocks;
-    }
-
     public void buildMesh(World world, Scene scene) {
         if (chunkMesh == null) {
             chunkMesh = new ChunkMesh();
@@ -275,7 +271,6 @@ public class Chunk {
         chunkMesh.buildMesh(this, world);
 
         if (chunkEntity == null) {
-            // Crea un'entità per il chunk
             String entityId = "chunk_" + chunkX + "_" + chunkZ;
             chunkEntity = new Entity(entityId, "chunk", new Vector4f(0, 0, 1, 1));
             chunkEntity.setPosition(
@@ -284,7 +279,6 @@ public class Chunk {
                     chunkZ * DEPTH * Block.BLOCK_SIZE);
             chunkEntity.updateModelMatrix();
 
-            // Aggiungi l'entità al model
             if (scene != null) {
                 if (!scene.getModelMap().containsKey("chunk")) {
                     scene.registerChunkModel(chunkMesh.getMesh());
@@ -292,7 +286,6 @@ public class Chunk {
                 scene.addChunkEntity(chunkEntity);
             }
         } else if (scene != null) {
-            // Aggiorna la mesh esistente
             scene.updateChunkMesh(chunkEntity.getId(), chunkMesh.getMesh());
         }
 

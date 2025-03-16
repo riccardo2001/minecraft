@@ -22,7 +22,7 @@ public class TextureCacheAtlas {
 
     private Map<String, int[]> initializeTexturePositions() {
         Map<String, int[]> positions = new HashMap<>();
-        // Rimuovo le definizioni duplicate e correggo le posizioni
+
         positions.put("grass_top", new int[] { 7, 14 });
         positions.put("grass_side", new int[] { 6, 14 });
         positions.put("dirt", new int[] { 8, 5 });
@@ -32,18 +32,6 @@ public class TextureCacheAtlas {
         positions.put("bedrock", new int[] { 1, 1 });
         positions.put("default", new int[] { 0, 1 });
         return positions;
-    }
-
-    public TextureAtlas getAtlasTexture() {
-        return atlas;
-    }
-
-    public void cleanup() {
-        atlas.cleanup();
-        uvCache.clear();
-        texturePositions.clear();
-        textureRegionCache.clear();
-        textureRegionStringCache.clear();
     }
 
     public Vector4f getTextureRegion(BlockType type) {
@@ -62,26 +50,23 @@ public class TextureCacheAtlas {
             }
             int[] pos = texturePositions.get(textureName);
             float[] baseUV = atlas.getUVCoordinates(pos[0], pos[1]);
-            
+
             return new Vector4f(baseUV[0], baseUV[1], baseUV[2], baseUV[3]);
         });
     }
 
     public Vector4f getTextureRegion(String textureName) {
         return textureRegionStringCache.computeIfAbsent(textureName, t -> {
-            String actualTextureName = textureName; 
-            
+            String actualTextureName = textureName;
+
             if (!texturePositions.containsKey(actualTextureName)) {
                 System.err.println("Warning: Texture '" + actualTextureName + "' not found. Using default.");
                 actualTextureName = "default";
             }
-            
+
             int[] pos = texturePositions.get(actualTextureName);
             float[] baseUV = atlas.getUVCoordinates(pos[0], pos[1]);
-            
-            System.out.println("Texture coordinates for " + actualTextureName + ": " + 
-                baseUV[0] + ", " + baseUV[1] + ", " + baseUV[2] + "," + baseUV[3]);
-            
+
             return new Vector4f(baseUV[0], baseUV[1], baseUV[2], baseUV[3]);
         });
     }
@@ -106,5 +91,17 @@ public class TextureCacheAtlas {
             uvCache.put(textureName, formattedUV);
         }
         return uvCache.get(textureName);
+    }
+
+    public TextureAtlas getAtlasTexture() {
+        return atlas;
+    }
+
+    public void cleanup() {
+        atlas.cleanup();
+        uvCache.clear();
+        texturePositions.clear();
+        textureRegionCache.clear();
+        textureRegionStringCache.clear();
     }
 }

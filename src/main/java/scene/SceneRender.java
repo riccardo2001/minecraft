@@ -47,7 +47,6 @@ public class SceneRender {
         glActiveTexture(GL_TEXTURE0);
         textureAtlas.bind();
 
-        // Rendi tutti i chunk visibili
         var loadedChunks = scene.getWorld().getLoadedChunks();
         
         Model chunkModel = scene.getModelMap().get("chunk");
@@ -59,15 +58,12 @@ public class SceneRender {
                     continue;
                 }
                 
-                // Se il chunk è stato modificato, costruisci la sua mesh
                 if (chunk.isDirty()) {
                     chunk.buildMesh(scene.getWorld(), scene);
                 }
                 
-                // Ottieni l'entità del chunk
                 Entity chunkEntity = chunk.getChunkEntity();
                 if (chunkEntity != null) {
-                    // Renderizza l'entità del chunk
                     for (Mesh mesh : chunkModel.getMeshList()) {
                         glBindVertexArray(mesh.getVaoId());
                         
@@ -81,14 +77,12 @@ public class SceneRender {
             }
         }
 
-        // Renderizza eventuali altre entità non relative ai chunk
         renderOtherEntities(scene);
 
         shaderProgram.unbind();
     }
     
     private void renderOtherEntities(Scene scene) {
-        // Mappa modelli -> entità per le entità che non sono chunk
         Map<Model, List<Entity>> modelEntityMap = new HashMap<>();
         
         for (var entry : scene.getModelMap().entrySet()) {
@@ -101,7 +95,6 @@ public class SceneRender {
             }
         }
         
-        // Renderizza ogni modello con tutte le sue entità
         for (var entry : modelEntityMap.entrySet()) {
             Model model = entry.getKey();
             List<Entity> entities = entry.getValue();

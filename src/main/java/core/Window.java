@@ -11,11 +11,11 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 public class Window {
     private final long windowHandle;
     private int width, height;
+    private boolean isCursorVisible = false;
+    private boolean isPaused = false;
     private String title;
     private Callable<Void> resizeFunc;
     private MouseInput mouseInput;
-    private boolean isCursorVisible = false;
-    private boolean isPaused = false;
 
     public static class WindowOptions {
         public boolean compatibleProfile;
@@ -56,7 +56,6 @@ public class Window {
         }
         glfwSetFramebufferSizeCallback(windowHandle, (window, w, h) -> resized(w, h));
 
-        // Gestione del tasto ESC per alternare la visibilità del cursore e la pausa
         glfwSetKeyCallback(windowHandle, (window, key, scancode, action, mods) -> {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                 togglePause();
@@ -97,6 +96,7 @@ public class Window {
         try {
             resizeFunc.call();
         } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 

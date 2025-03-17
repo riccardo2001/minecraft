@@ -19,6 +19,10 @@ public class Render {
         glViewport(0, 0, window.getWidth(), window.getHeight());
         sceneRender.render(window, scene);
     }
+    
+    public SceneRender getSceneRender() {
+        return sceneRender;
+    }
 
     public void cleanup() {
         sceneRender.cleanup();

@@ -1,6 +1,8 @@
 package core;
 
 import org.lwjgl.glfw.GLFWVidMode;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -16,6 +18,7 @@ public class Window {
     private String title;
     private Callable<Void> resizeFunc;
     private MouseInput mouseInput;
+    private Map<Integer, Boolean> previousKeyState;
 
     public static class WindowOptions {
         public boolean compatibleProfile;
@@ -76,6 +79,7 @@ public class Window {
         height = hArr[0];
 
         mouseInput = new MouseInput(windowHandle);
+        previousKeyState = new HashMap<>();
     }
 
     private void togglePause() {
@@ -101,6 +105,10 @@ public class Window {
     }
 
     public void pollEvents() {
+        // Salva lo stato attuale dei tasti prima del polling
+        for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; key++) {
+            previousKeyState.put(key, isKeyPressed(key));
+        }
         glfwPollEvents();
     }
 
@@ -119,6 +127,20 @@ public class Window {
 
     public boolean isKeyPressed(int keyCode) {
         return glfwGetKey(windowHandle, keyCode) == GLFW_PRESS;
+    }
+
+    public boolean isKeyJustPressed() {
+        for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; key++) {
+            if (isKeyJustPressed(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isKeyJustPressed(int keyCode) {
+        Boolean previous = previousKeyState.getOrDefault(keyCode, false);
+        return isKeyPressed(keyCode) && !previous;
     }
 
     public int getWidth() {

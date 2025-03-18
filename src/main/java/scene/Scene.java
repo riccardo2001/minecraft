@@ -1,5 +1,6 @@
 package scene;
 
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import graphics.Mesh;
 import graphics.Model;
@@ -140,7 +141,8 @@ public class Scene {
     }
 
     public void registerChunkModel(String modelId, Mesh mesh) {
-        if (mesh == null) return;
+        if (mesh == null)
+            return;
         Model existingModel = modelMap.get(modelId);
         if (existingModel == null) {
             List<Mesh> meshes = new ArrayList<>();
@@ -212,5 +214,50 @@ public class Scene {
 
     public TextureCacheAtlas getTextureCacheAtlas() {
         return textureCacheAtlas;
+    }
+
+    public void debugWorldInfo() {
+        if (world == null) {
+            System.out.println("DEBUG: World is null!");
+            return;
+        }
+
+        Camera camera = getCamera();
+        Vector3f position = camera.getPosition();
+        int x = (int) Math.floor(position.x);
+        int y = (int) Math.floor(position.y);
+        int z = (int) Math.floor(position.z);
+
+        System.out.println("DEBUG WORLD INFO:");
+        System.out.println("Camera at block: (" + x + "," + y + "," + z + ")");
+
+        for (int yOffset = -1; yOffset <= 1; yOffset++) {
+            for (int zOffset = -1; zOffset <= 1; zOffset++) {
+                for (int xOffset = -1; xOffset <= 1; xOffset++) {
+                    Block block = world.getBlock(x + xOffset, y + yOffset, z + zOffset);
+                    if (block != null && block.isSolid()) {
+                        System.out.println("Solid block found at: (" +
+                                (x + xOffset) + "," +
+                                (y + yOffset) + "," +
+                                (z + zOffset) + "), type: " +
+                                block.getType());
+                    }
+                }
+            }
+        }
+
+        Vector3f direction = camera.getFrontVector();
+        System.out.println("Looking direction: " + direction);
+
+        for (int i = 1; i <= 5; i++) {
+            int targetX = (int) Math.floor(position.x + direction.x * i);
+            int targetY = (int) Math.floor(position.y + direction.y * i);
+            int targetZ = (int) Math.floor(position.z + direction.z * i);
+
+            Block block = world.getBlock(targetX, targetY, targetZ);
+            System.out.println("Block at distance " + i + " (" +
+                    targetX + "," + targetY + "," + targetZ + "): " +
+                    (block != null ? block.getType() : "null"));
+        }
     }
 }

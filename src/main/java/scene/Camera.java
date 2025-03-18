@@ -101,4 +101,16 @@ public class Camera {
             frustum = new Frustum();
         return frustum;
     }
+
+    public Vector3f getFrontVector() {
+        Vector3f front = new Vector3f();
+        front.x = (float) Math.cos(rotation.x) * (float) Math.cos(rotation.y);
+        front.y = (float) Math.sin(rotation.x);
+        front.z = (float) Math.cos(rotation.x) * (float) Math.sin(rotation.y);
+        return front.normalize();
+    }
+    
+    public Vector2f getRotation() {
+        return new Vector2f(rotation);
+    }
 }

@@ -1,11 +1,13 @@
-#version 330 core
+#version 330
 
-layout(location = 0) in vec3 aPos;
+layout (location=0) in vec3 position;
+layout (location=1) in vec3 inColour;
 
-uniform vec2 uScreenSize;
+out vec3 vertexColor;
+
+uniform mat4 projectionMatrix;
 
 void main() {
-    // Converti coordinate da pixel a spazio NDC (-1 to 1)
-    vec2 pos = (aPos.xy * 2.0 / uScreenSize) - 1.0;
-    gl_Position = vec4(pos.x, -pos.y, 0.0, 1.0);
+    gl_Position = projectionMatrix * vec4(position, 1.0);
+    vertexColor = inColour;
 }

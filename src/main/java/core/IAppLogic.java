@@ -11,5 +11,5 @@ public interface IAppLogic {
 
     void input(Window window, Scene scene, float diffTimeMillis);
 
-    void update(Window window, Scene scene, long diffTimeMillis);
+    void update(Window window, Scene scene, Render render);
 }

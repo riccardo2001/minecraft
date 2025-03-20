@@ -42,8 +42,7 @@ public class Engine {
             long now = System.nanoTime();
 
             if (now - lastUpdateTime >= nsPerUpdate) {
-                long updateDiffMillis = (now - lastUpdateTime) / 1_000_000L;
-                appLogic.update(window, scene, updateDiffMillis);
+                appLogic.update(window, scene, render);
                 lastUpdateTime = now;
             }
 

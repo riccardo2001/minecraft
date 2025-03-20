@@ -1,8 +1,8 @@
-#version 330
+#version 330 core
 
-out vec4 fragColor;
+uniform vec4 color;
+out vec4 FragColor;
 
 void main() {
-    // Verde neon brillante per massima visibilità
-    fragColor = vec4(0.0, 1.0, 0.0, 1.0);
+    FragColor = color;
 }

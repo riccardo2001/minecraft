@@ -104,9 +104,13 @@ public class Camera {
 
     public Vector3f getFrontVector() {
         Vector3f front = new Vector3f();
-        front.x = (float) Math.cos(rotation.x) * (float) Math.cos(rotation.y);
-        front.y = (float) Math.sin(rotation.x);
-        front.z = (float) Math.cos(rotation.x) * (float) Math.sin(rotation.y);
+        float yaw = rotation.y;
+        float pitch = rotation.x;
+        
+        front.x = (float) Math.sin(yaw) * (float) Math.cos(pitch);
+        front.y = -(float) Math.sin(pitch);
+        front.z = -(float) Math.cos(yaw) * (float) Math.cos(pitch);
+        
         return front.normalize();
     }
     

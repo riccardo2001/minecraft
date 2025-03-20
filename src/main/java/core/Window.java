@@ -105,7 +105,6 @@ public class Window {
     }
 
     public void pollEvents() {
-        // Salva lo stato attuale dei tasti prima del polling
         for (int key = GLFW_KEY_SPACE; key <= GLFW_KEY_LAST; key++) {
             previousKeyState.put(key, isKeyPressed(key));
         }

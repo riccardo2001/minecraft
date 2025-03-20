@@ -1,7 +1,9 @@
 package main;
 
 import graphics.Render;
+import scene.BlockOutline;
 import scene.Camera;
+import scene.RayCast;
 import scene.Scene;
 import world.World;
 import org.joml.Vector2f;
@@ -18,6 +20,8 @@ import static org.lwjgl.opengl.GL11.*;
 public class Main implements IAppLogic {
     private static final float MOUSE_SENSITIVITY = 0.1f;
     private static final float MOVEMENT_SPEED = 0.005f;
+
+    private RayCast rayCast;
 
     public static void main(String[] args) {
         Main main = new Main();
@@ -38,8 +42,10 @@ public class Main implements IAppLogic {
         scene.setWorld(new World());
         scene.getWorld().generateInitialWorld(0, 0);
         scene.getCamera().setPosition(0f, 75f, 0f);
-        System.out.println("World generated...");
 
+        rayCast = new RayCast();
+
+        System.out.println("World generated...");
         System.out.println("OpenGL Vendor: " + glGetString(GL_VENDOR));
         System.out.println("OpenGL Renderer: " + glGetString(GL_RENDERER));
         System.out.println("OpenGL Version: " + glGetString(GL_VERSION));
@@ -93,14 +99,25 @@ public class Main implements IAppLogic {
     }
 
     @Override
-    public void update(Window window, Scene scene, long diffTimeMillis) {
+    public void update(Window window, Scene scene, Render render) {
         float playerX = scene.getCamera().getPosition().x;
         float playerZ = scene.getCamera().getPosition().z;
+        
         scene.updateWorldGeneration(playerX, playerZ);
+
+        BlockOutline blockOutline = render.getSceneRender().getBlockOutline();
+
+        rayCast.performRayCast(scene.getCamera(), scene.getWorld());
+
+        if (rayCast.hasHit() && rayCast.getHitDistance() <= 8.0f) {
+            blockOutline.setBlockPosition(rayCast.getBlockPosition());
+            blockOutline.setVisible(true);
+        } else {
+            blockOutline.setVisible(false);
+        }
     }
 
     @Override
     public void cleanup() {
-        // Cleanup eventuale
     }
 }

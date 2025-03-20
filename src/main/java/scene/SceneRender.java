@@ -25,6 +25,7 @@ public class SceneRender {
     
     private Fog fog;
     private Crosshair crosshair;
+    private BlockOutline blockOutline;
 
     public SceneRender() {
         List<ShaderProgram.ShaderModuleData> modules = new ArrayList<>();
@@ -34,6 +35,7 @@ public class SceneRender {
 
         fog = new Fog();
         crosshair = new Crosshair();
+        blockOutline = new BlockOutline();
 
         createUniforms();
     }
@@ -42,6 +44,7 @@ public class SceneRender {
         shaderProgram.cleanup();
         fog.cleanup();
         crosshair.cleanup();
+        blockOutline.cleanup();
     }
 
     public void render(Window window, Scene scene) {
@@ -69,6 +72,8 @@ public class SceneRender {
             activeUniformsMap.setUniform("fogDensity", fog.getFogDensity());
             activeUniformsMap.setUniform("fogGradient", fog.getFogGradient());
         }
+
+        
 
         TextureCacheAtlas textureCache = scene.getTextureCacheAtlas();
         TextureAtlas textureAtlas = textureCache.getAtlasTexture();
@@ -113,6 +118,10 @@ public class SceneRender {
         
         if (!window.isCursorVisible()) {
             crosshair.render(window);
+        }
+
+        if (blockOutline != null) {
+            blockOutline.render(scene);
         }
     }
 
@@ -175,5 +184,13 @@ public class SceneRender {
 
     public boolean isUsingFog() {
         return fog.isUseFog();
+    }
+
+    public void setBlockOutline(BlockOutline blockOutline) {
+        this.blockOutline = blockOutline;
+    }
+
+    public BlockOutline getBlockOutline() {
+        return blockOutline;
     }
 }

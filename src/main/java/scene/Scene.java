@@ -2,6 +2,8 @@ package scene;
 
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+
+import entities.Player;
 import graphics.Mesh;
 import graphics.Model;
 import graphics.Projection;
@@ -20,7 +22,9 @@ public class Scene {
 
     private static Projection projection;
     private static Camera camera;
+    private static RayCast rayCast;
     private static World world;
+    private static Player player;
 
     private int currentCenterChunkX = Integer.MIN_VALUE;
     private int currentCenterChunkZ = Integer.MIN_VALUE;
@@ -33,6 +37,9 @@ public class Scene {
     public Scene(int width, int height) {
         projection = new Projection(width, height);
         camera = new Camera();
+        player = new Player();
+        rayCast = new RayCast();
+        world = new World();
         textureCacheAtlas = new TextureCacheAtlas("textures/atlas2.png", 512, 512, 16);
     }
 
@@ -208,12 +215,32 @@ public class Scene {
         return world;
     }
 
-    public void setWorld(World worldd) {
-        world = worldd;
-    }
-
     public TextureCacheAtlas getTextureCacheAtlas() {
         return textureCacheAtlas;
+    }
+
+    public int getCurrentCenterChunkX() {
+        return this.currentCenterChunkX;
+    }
+
+    public void setCurrentCenterChunkX(int currentCenterChunkX) {
+        this.currentCenterChunkX = currentCenterChunkX;
+    }
+
+    public int getCurrentCenterChunkZ() {
+        return this.currentCenterChunkZ;
+    }
+
+    public void setCurrentCenterChunkZ(int currentCenterChunkZ) {
+        this.currentCenterChunkZ = currentCenterChunkZ;
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public RayCast getRayCast() {
+        return rayCast;
     }
 
     public void debugWorldInfo() {

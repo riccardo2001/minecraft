@@ -185,7 +185,7 @@ find ~/minecraft/src/main/java -type f -name "*.java" -exec cat {} + > output.tx
 
 ## Planned Extensions
 
-- Block pointer
+- HUD quantity manage
 - Block placing and breaking
 - Basic physics (gravity, collisions)
 - Inventory system

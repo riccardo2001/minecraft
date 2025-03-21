@@ -1,11 +1,8 @@
 package main;
 
 import graphics.Render;
-import scene.BlockOutline;
 import scene.Camera;
-import scene.RayCast;
 import scene.Scene;
-import world.World;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -20,8 +17,6 @@ import static org.lwjgl.opengl.GL11.*;
 public class Main implements IAppLogic {
     private static final float MOUSE_SENSITIVITY = 0.1f;
     private static final float MOVEMENT_SPEED = 0.005f;
-
-    private RayCast rayCast;
 
     public static void main(String[] args) {
         Main main = new Main();
@@ -39,11 +34,8 @@ public class Main implements IAppLogic {
 
     @Override
     public void init(Window window, Scene scene, Render render) {
-        scene.setWorld(new World());
         scene.getWorld().generateInitialWorld(0, 0);
         scene.getCamera().setPosition(0f, 75f, 0f);
-
-        rayCast = new RayCast();
 
         System.out.println("World generated...");
         System.out.println("OpenGL Vendor: " + glGetString(GL_VENDOR));
@@ -92,6 +84,18 @@ public class Main implements IAppLogic {
             if (window.isKeyPressed(GLFW_KEY_LEFT_SHIFT))
                 camera.moveDown(move);
 
+            double scrollY = mouseInput.getScrollOffsetY();
+            if (scrollY != 0) {
+                int currentSlot = scene.getPlayer().getInventory().getSelectedSlot();
+                int slotChange = (int) Math.signum(scrollY);
+                int newSlot = currentSlot - slotChange;
+
+                newSlot = (newSlot + 9) % 9;
+
+                scene.getPlayer().getInventory().selectSlot(newSlot);
+                mouseInput.resetScroll();
+            }
+
             camera.addRotation(
                     (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),
                     (float) Math.toRadians(displVec.y * MOUSE_SENSITIVITY));
@@ -102,19 +106,10 @@ public class Main implements IAppLogic {
     public void update(Window window, Scene scene, Render render) {
         float playerX = scene.getCamera().getPosition().x;
         float playerZ = scene.getCamera().getPosition().z;
-        
+
         scene.updateWorldGeneration(playerX, playerZ);
+        render.updateBlockOutline(scene);
 
-        BlockOutline blockOutline = render.getSceneRender().getBlockOutline();
-
-        rayCast.performRayCast(scene.getCamera(), scene.getWorld());
-
-        if (rayCast.hasHit() && rayCast.getHitDistance() <= 8.0f) {
-            blockOutline.setBlockPosition(rayCast.getBlockPosition());
-            blockOutline.setVisible(true);
-        } else {
-            blockOutline.setVisible(false);
-        }
     }
 
     @Override

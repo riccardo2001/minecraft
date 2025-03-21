@@ -48,12 +48,19 @@ public class TextureAtlas {
     private void generateTexture(int width, int height, ByteBuffer buf) {
         textureId = glGenTextures();
         glBindTexture(GL_TEXTURE_2D, textureId);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+        if (glGetError() != GL_NO_ERROR) {
+            throw new RuntimeException("Error binding texture");
+        }
+
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+
+        if (glGetError() != GL_NO_ERROR) {
+            throw new RuntimeException("Error loading texture data");
+        }
+
         glGenerateMipmap(GL_TEXTURE_2D);
     }
 
@@ -63,12 +70,12 @@ public class TextureAtlas {
 
     public float[] getUVCoordinates(int x, int y) {
         float margin = 0.000f;
-        
+
         float uMin = (x * tileSize + margin) / (float) atlasWidth;
         float vMin = (y * tileSize + margin) / (float) atlasHeight;
         float uMax = ((x + 1) * tileSize - margin) / (float) atlasWidth;
         float vMax = ((y + 1) * tileSize - margin) / (float) atlasHeight;
-        
+
         return new float[] { uMin, vMin, uMax, vMax };
     }
 

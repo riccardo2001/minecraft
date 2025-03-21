@@ -10,6 +10,7 @@ import java.nio.DoubleBuffer;
 public class MouseInput {
     private Vector2f currentPos, displVec, previousPos;
     private boolean leftButtonPressed, rightButtonPressed;
+    private double scrollOffsetY;
 
     public MouseInput(long windowHandle) {
         glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -23,6 +24,10 @@ public class MouseInput {
         glfwSetMouseButtonCallback(windowHandle, (handle, button, action, mode) -> {
             leftButtonPressed = button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS;
             rightButtonPressed = button == GLFW_MOUSE_BUTTON_2 && action == GLFW_PRESS;
+        });
+
+        glfwSetScrollCallback(windowHandle, (window, xoffset, yoffset) -> {
+            scrollOffsetY += yoffset;
         });
     }
 
@@ -66,5 +71,13 @@ public class MouseInput {
 
     public boolean isRightButtonPressed() {
         return rightButtonPressed;
+    }
+
+    public double getScrollOffsetY() {
+        return scrollOffsetY;
+    }
+
+    public void resetScroll() {
+        scrollOffsetY = 0;
     }
 }

@@ -8,6 +8,7 @@ import graphics.ShaderProgram;
 import graphics.TextureAtlas;
 import graphics.TextureCacheAtlas;
 import graphics.UniformsMap;
+import ui.CoordinateDisplay;
 import world.Block;
 import world.Chunk;
 import world.ChunkPosition;
@@ -22,10 +23,11 @@ import static org.lwjgl.opengl.GL30.*;
 public class SceneRender {
     private ShaderProgram shaderProgram;
     private UniformsMap uniformsMap;
-    
+
     private Fog fog;
     private Crosshair crosshair;
     private BlockOutline blockOutline;
+    private CoordinateDisplay coordDisplay;
 
     public SceneRender() {
         List<ShaderProgram.ShaderModuleData> modules = new ArrayList<>();
@@ -36,6 +38,7 @@ public class SceneRender {
         fog = new Fog();
         crosshair = new Crosshair();
         blockOutline = new BlockOutline();
+        coordDisplay = new CoordinateDisplay();
 
         createUniforms();
     }
@@ -45,12 +48,10 @@ public class SceneRender {
         fog.cleanup();
         crosshair.cleanup();
         blockOutline.cleanup();
+        coordDisplay.cleanup();
     }
 
     public void render(Window window, Scene scene) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glViewport(0, 0, window.getWidth(), window.getHeight());
-
         scene.getCamera().getFrustum().update(scene.getCamera().getViewMatrix(), scene.getProjection().getProjMatrix());
 
         if (fog.isUseFog()) {
@@ -72,8 +73,6 @@ public class SceneRender {
             activeUniformsMap.setUniform("fogDensity", fog.getFogDensity());
             activeUniformsMap.setUniform("fogGradient", fog.getFogGradient());
         }
-
-        
 
         TextureCacheAtlas textureCache = scene.getTextureCacheAtlas();
         TextureAtlas textureAtlas = textureCache.getAtlasTexture();
@@ -115,7 +114,7 @@ public class SceneRender {
         renderOtherEntities(scene, activeUniformsMap);
 
         activeShader.unbind();
-        
+
         if (!window.isCursorVisible()) {
             crosshair.render(window);
         }
@@ -123,6 +122,14 @@ public class SceneRender {
         if (blockOutline != null) {
             blockOutline.render(scene);
         }
+
+        renderCoordinates(scene);
+    }
+
+    public void renderCoordinates(Scene scene) {
+        Vector3f pos = scene.getCamera().getPosition();
+        String coordText = String.format("X:%.1f Y:%.1f Z:%.1f", pos.x, pos.y, pos.z);
+        coordDisplay.render(coordText, 10, 700);
     }
 
     private void renderOtherEntities(Scene scene, UniformsMap activeUniformsMap) {
@@ -193,4 +200,6 @@ public class SceneRender {
     public BlockOutline getBlockOutline() {
         return blockOutline;
     }
+
+    
 }

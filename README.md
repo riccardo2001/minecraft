@@ -32,6 +32,7 @@ A simple Minecraft clone developed in Java using LWJGL (Lightweight Java Game Li
 - `ESC`: Pause/Resume
 - `SCROLL`: Select item box
 - `1-9`: Select specific item box
+- `F3`: Toggle Coordinates
 
 
 ## Project Structure

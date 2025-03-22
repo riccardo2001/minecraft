@@ -2,6 +2,7 @@ package ui;
 
 import graphics.*;
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 import org.joml.Vector4f;
 import core.Window;
 import entities.Inventory;
@@ -112,43 +113,30 @@ public class HUD {
             }
         }
 
+        List<TextRenderer.TextEntry> textEntries = new ArrayList<>();
         for (int i = 0; i < 9; i++) {
             int slotX = startX + i * (slotSize + slotSpacing);
-
             if (hotbar[i] != null) {
                 int count = inventory.getItemCount(hotbar[i]);
-                if (count > -1) {
+                if (count > -1) { // Only show count if >1
                     String text = String.valueOf(count);
                     float textX = slotX + slotSize - 16;
-                    float textY = -y + window.getHeight() - 20;
-
-                    boolean depthWasEnabled = glIsEnabled(GL_DEPTH_TEST);
-                    boolean blendWasEnabled = glIsEnabled(GL_BLEND);
-
-                    // Nel metodo renderHotbar della classe HUD
-                    glEnable(GL_BLEND);
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                    window.getTextRenderer().renderText(text, textX, textY, 0.7f, window);
-                    glDisable(GL_BLEND);
-
-                    if (depthWasEnabled) {
-                        glEnable(GL_DEPTH_TEST);
-                    } else {
-                        glDisable(GL_DEPTH_TEST);
-                    }
-
-                    if (blendWasEnabled) {
-                        glEnable(GL_BLEND);
-                    } else {
-                        glDisable(GL_BLEND);
-                    }
-
-                    shaderProgram.bind();
-                    Matrix4f projectionMatrix = new Matrix4f().ortho(0, window.getWidth(), 0, window.getHeight(), -1,
-                            1);
-                    uniformsMap.setUniform("projectionMatrix", projectionMatrix);
+                    float textY = window.getHeight() - 36; // Adjust based on your layout
+                    textEntries.add(new TextRenderer.TextEntry(text, textX, textY, 0.7f));
                 }
             }
+        }
+
+        // Batch render all text
+        if (!textEntries.isEmpty()) {
+            glEnable(GL_BLEND);
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            window.getTextRenderer().renderBatch(
+                    textEntries,
+                    new Vector3f(1, 1, 1),
+                    window.getWidth(),
+                    window.getHeight());
+            glDisable(GL_BLEND);
         }
     }
 

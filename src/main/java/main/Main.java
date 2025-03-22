@@ -48,7 +48,7 @@ public class Main implements IAppLogic {
     }
 
     @Override
-    public void input(Window window, Scene scene, float diffTimeMillis) {
+    public void input(Window window, Scene scene, Render render, float diffTimeMillis) {
         boolean isPaused = window.isCursorVisible();
 
         if (!isPaused) {
@@ -117,6 +117,10 @@ public class Main implements IAppLogic {
                 scene.getPlayer().getInventory().selectSlot(7);
             } else if (window.isKeyPressed(GLFW_KEY_9)) {
                 scene.getPlayer().getInventory().selectSlot(8);
+            }
+
+            if(window.isKeyPressed(GLFW_KEY_F3)){
+                render.getSceneRender().setUseCoordinates(!render.getSceneRender().isUsingCoordinates());
             }
 
             camera.addRotation(

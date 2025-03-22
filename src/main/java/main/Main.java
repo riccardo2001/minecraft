@@ -99,6 +99,26 @@ public class Main implements IAppLogic {
                 mouseInput.resetScroll();
             }
 
+            if (window.isKeyPressed(GLFW_KEY_1)) {
+                scene.getPlayer().getInventory().selectSlot(0);
+            } else if (window.isKeyPressed(GLFW_KEY_2)) {
+                scene.getPlayer().getInventory().selectSlot(1);
+            } else if (window.isKeyPressed(GLFW_KEY_3)) {
+                scene.getPlayer().getInventory().selectSlot(2);
+            } else if (window.isKeyPressed(GLFW_KEY_4)) {
+                scene.getPlayer().getInventory().selectSlot(3);
+            } else if (window.isKeyPressed(GLFW_KEY_5)) {
+                scene.getPlayer().getInventory().selectSlot(4);
+            } else if (window.isKeyPressed(GLFW_KEY_6)) {
+                scene.getPlayer().getInventory().selectSlot(5);
+            } else if (window.isKeyPressed(GLFW_KEY_7)) {
+                scene.getPlayer().getInventory().selectSlot(6);
+            } else if (window.isKeyPressed(GLFW_KEY_8)) {
+                scene.getPlayer().getInventory().selectSlot(7);
+            } else if (window.isKeyPressed(GLFW_KEY_9)) {
+                scene.getPlayer().getInventory().selectSlot(8);
+            }
+
             camera.addRotation(
                     (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),
                     (float) Math.toRadians(displVec.y * MOUSE_SENSITIVITY));

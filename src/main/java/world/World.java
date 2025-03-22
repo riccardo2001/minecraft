@@ -27,10 +27,10 @@ public class World {
     public int getTerrainHeight(int globalX, int globalZ) {
         double hillFactor = 20.0;
         double frequency = 0.05;
-        
+
         double noiseX = globalX * frequency;
         double noiseZ = globalZ * frequency;
-        
+
         double height = Math.sin(noiseX) * Math.cos(noiseZ) * hillFactor;
         return 64 + (int) height;
     }
@@ -64,7 +64,25 @@ public class World {
 
         int localX = Math.floorMod(x, Chunk.WIDTH);
         int localZ = Math.floorMod(z, Chunk.DEPTH);
-        
+
         return chunk.getBlock(localX, y, localZ);
+    }
+
+    public void setBlock(int x, int y, int z, Block block) {
+        int chunkX = Math.floorDiv(x, Chunk.WIDTH);
+        int chunkZ = Math.floorDiv(z, Chunk.DEPTH);
+
+        Chunk chunk = getChunk(chunkX, chunkZ);
+        if (chunk != null) {
+            int localX = Math.floorMod(x, Chunk.WIDTH);
+            int localZ = Math.floorMod(z, Chunk.DEPTH);
+            chunk.setBlock(localX, y, localZ, block);
+        }
+    }
+
+    public Chunk getChunkContaining(int worldX, int worldZ) {
+        int chunkX = Math.floorDiv(worldX, Chunk.WIDTH);
+        int chunkZ = Math.floorDiv(worldZ, Chunk.DEPTH);
+        return getChunk(chunkX, chunkZ);
     }
 }

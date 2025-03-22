@@ -120,7 +120,7 @@ public class HUD {
                 int count = inventory.getItemCount(hotbar[i]);
                 if (count > -1) { // Only show count if >1
                     String text = String.valueOf(count);
-                    float textX = slotX + slotSize - 16;
+                    float textX = slotX + slotSize - 22;
                     float textY = window.getHeight() - 36; // Adjust based on your layout
                     textEntries.add(new TextRenderer.TextEntry(text, textX, textY, 0.7f));
                 }

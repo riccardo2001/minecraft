@@ -145,6 +145,20 @@ public class Scene {
                 }
             }
         }
+
+        
+    }
+
+    public void updateChunks() {
+        Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
+        
+        for (var entry : loadedChunks.entrySet()) {
+            Chunk chunk = entry.getValue();
+            if (chunk.isDirty()) {
+                chunk.buildMesh(world, this);
+                chunk.setDirty(false);
+            }
+        }
     }
 
     public void registerChunkModel(String modelId, Mesh mesh) {

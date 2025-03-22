@@ -33,6 +33,7 @@ A simple Minecraft clone developed in Java using LWJGL (Lightweight Java Game Li
 - `SCROLL`: Select item box
 - `1-9`: Select specific item box
 - `F3`: Toggle Coordinates
+- `LEFT-CLICL`: Broke block
 
 
 ## Project Structure
@@ -189,7 +190,7 @@ find ~/minecraft/src/main/java -type f -name "*.java" -exec cat {} + > output.tx
 
 ## Planned Extensions
 
-- Block placing and breaking
+- Block placing
 - Basic physics (gravity, collisions)
 - Inventory system
 - Crafting

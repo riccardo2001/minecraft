@@ -30,6 +30,9 @@ A simple Minecraft clone developed in Java using LWJGL (Lightweight Java Game Li
 - `L-CTRL`: Dash
 - `MOUSE`: Look around
 - `ESC`: Pause/Resume
+- `SCROLL`: Select item box
+- `1-9`: Select specific item box
+
 
 ## Project Structure
 

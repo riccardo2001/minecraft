@@ -4,14 +4,13 @@ import org.joml.*;
 import java.lang.Math;
 
 public class Camera {
-    private Vector3f position, up;
+    private Vector3f position;
     private Vector2f rotation;
     private Matrix4f viewMatrix;
     private Frustum frustum;
 
     public Camera() {
         position = new Vector3f();
-        up = new Vector3f();
         rotation = new Vector2f();
         viewMatrix = new Matrix4f();
     }
@@ -28,14 +27,12 @@ public class Camera {
     }
 
     public void moveUp(float inc) {
-        viewMatrix.positiveY(up).mul(inc);
-        position.add(up);
+        position.add(0, inc, 0);
         recalculate();
     }
 
     public void moveDown(float inc) {
-        viewMatrix.positiveY(up).mul(inc);
-        position.sub(up);
+        position.add(0, -inc, 0);
         recalculate();
     }
 

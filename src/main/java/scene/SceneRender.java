@@ -8,7 +8,7 @@ import graphics.ShaderProgram;
 import graphics.TextureAtlas;
 import graphics.TextureCacheAtlas;
 import graphics.UniformsMap;
-import ui.CoordinateDisplay;
+import ui.HUD;
 import world.Block;
 import world.Chunk;
 import world.ChunkPosition;
@@ -27,7 +27,7 @@ public class SceneRender {
     private Fog fog;
     private Crosshair crosshair;
     private BlockOutline blockOutline;
-    private CoordinateDisplay coordDisplay;
+    private HUD hud;
 
     public SceneRender() {
         List<ShaderProgram.ShaderModuleData> modules = new ArrayList<>();
@@ -38,7 +38,7 @@ public class SceneRender {
         fog = new Fog();
         crosshair = new Crosshair();
         blockOutline = new BlockOutline();
-        coordDisplay = new CoordinateDisplay();
+        hud = new HUD();
 
         createUniforms();
     }
@@ -48,7 +48,7 @@ public class SceneRender {
         fog.cleanup();
         crosshair.cleanup();
         blockOutline.cleanup();
-        coordDisplay.cleanup();
+        hud.cleanup();
     }
 
     public void render(Window window, Scene scene) {
@@ -123,13 +123,15 @@ public class SceneRender {
             blockOutline.render(scene);
         }
 
-        renderCoordinates(scene);
+        renderCoordinates(scene, window);
+
+        hud.render(scene.getPlayer().getInventory(), scene.getTextureCacheAtlas(), window);
     }
 
-    public void renderCoordinates(Scene scene) {
+    public void renderCoordinates(Scene scene, Window window) {
         Vector3f pos = scene.getCamera().getPosition();
         String coordText = String.format("X:%.1f Y:%.1f Z:%.1f", pos.x, pos.y, pos.z);
-        coordDisplay.render(coordText, 10, 700);
+        window.getTextRenderer().renderText(coordText, 10, 10, 1.1f, window);
     }
 
     private void renderOtherEntities(Scene scene, UniformsMap activeUniformsMap) {
@@ -201,5 +203,4 @@ public class SceneRender {
         return blockOutline;
     }
 
-    
 }

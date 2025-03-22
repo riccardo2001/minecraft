@@ -2,21 +2,17 @@ package graphics;
 
 import static org.lwjgl.opengl.GL11.*;
 
-
 import core.Window;
 import scene.Scene;
 import scene.SceneRender;
-import ui.HUD;
 
 public class Render {
     private SceneRender sceneRender;
-    private HUD hud;
 
     public Render() {
         org.lwjgl.opengl.GL.createCapabilities();
         glEnable(GL_DEPTH_TEST);
         sceneRender = new SceneRender();
-        hud = new HUD();
     }
 
     public void render(Window window, Scene scene) {
@@ -25,15 +21,10 @@ public class Render {
 
         sceneRender.render(window, scene);
 
-        hud.render(scene.getPlayer().getInventory(), scene.getTextureCacheAtlas(), window);
     }
 
     public SceneRender getSceneRender() {
         return sceneRender;
-    }
-
-    public HUD getHud() {
-        return hud;
     }
 
     public void updateBlockOutline(Scene scene) {
@@ -50,6 +41,5 @@ public class Render {
 
     public void cleanup() {
         sceneRender.cleanup();
-        hud.cleanup();
     }
 }

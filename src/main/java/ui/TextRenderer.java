@@ -2,6 +2,8 @@ package ui;
 
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
+
+import core.Window;
 import graphics.ShaderProgram;
 import graphics.UniformsMap;
 
@@ -13,7 +15,7 @@ import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 
-public class CoordinateDisplay {
+public class TextRenderer {
         private ShaderProgram shader;
         private UniformsMap uniforms;
         private int vao;
@@ -22,10 +24,9 @@ public class CoordinateDisplay {
 
         private static final float CHAR_WIDTH = 10f;
         private static final float CHAR_HEIGHT = 16f;
-        private static final float SCALE = 0.5f;
-        private static final float SPACING = 3f;
+        private static final float SPACING = 5f;
 
-        public CoordinateDisplay() {
+        public TextRenderer() {
                 initShader();
                 initBuffers();
         }
@@ -57,19 +58,28 @@ public class CoordinateDisplay {
                 glBindVertexArray(0);
         }
 
-        public void render(String text, float x, float y) {
+        public void renderText(String text, float x, float y, float scale, Window window) {
+                glDisable(GL_DEPTH_TEST);
+                glEnable(GL_BLEND);
+                render(text, x, y, scale, new Vector3f(1, 1, 1), window.getWidth(), window.getHeight());
+                glDisable(GL_BLEND);
+                glEnable(GL_DEPTH_TEST);
+        }
+
+        public void render(String text, float x, float y, float scale, Vector3f color, int windowWidth,
+                        int windowHeight) {
                 List<Float> vertices = new ArrayList<>();
 
                 float cursorX = x;
                 for (char c : text.toCharArray()) {
                         float[][] segments = getCharSegments(c);
                         for (float[] seg : segments) {
-                                vertices.add(cursorX + seg[0] * SCALE);
-                                vertices.add(y + seg[1] * SCALE);
-                                vertices.add(cursorX + seg[2] * SCALE);
-                                vertices.add(y + seg[3] * SCALE);
+                                vertices.add(cursorX + seg[0] * scale);
+                                vertices.add(y + seg[1] * scale);
+                                vertices.add(cursorX + seg[2] * scale);
+                                vertices.add(y + seg[3] * scale);
                         }
-                        cursorX += (CHAR_WIDTH * SCALE) + SPACING;
+                        cursorX += (CHAR_WIDTH * scale) + (SPACING * scale);
                 }
 
                 glBindVertexArray(vao);
@@ -77,9 +87,9 @@ public class CoordinateDisplay {
                 glBufferSubData(GL_ARRAY_BUFFER, 0, toFloatBuffer(vertices));
 
                 shader.bind();
-                uniforms.setUniform("color", new Vector3f(1, 1, 1));
+                uniforms.setUniform("color", color);
 
-                Matrix4f projection = new Matrix4f().ortho(0, 1280, 720, 0, -1, 1);
+                Matrix4f projection = new Matrix4f().ortho(0, windowWidth, windowHeight, 0, -1, 1);
                 uniforms.setUniform("projection", projection);
 
                 glDisable(GL_DEPTH_TEST);

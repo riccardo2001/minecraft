@@ -3,6 +3,8 @@ package main;
 import graphics.Render;
 import scene.Camera;
 import scene.Scene;
+import ui.TextRenderer;
+
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 
@@ -36,6 +38,7 @@ public class Main implements IAppLogic {
     public void init(Window window, Scene scene, Render render) {
         scene.getWorld().generateInitialWorld(0, 0);
         scene.getCamera().setPosition(0f, 75f, 0f);
+        window.setTextRenderer(new TextRenderer());
 
         System.out.println("World generated...");
         System.out.println("OpenGL Vendor: " + glGetString(GL_VENDOR));

@@ -1,6 +1,9 @@
 package core;
 
 import org.lwjgl.glfw.GLFWVidMode;
+
+import ui.TextRenderer;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -19,6 +22,7 @@ public class Window {
     private Callable<Void> resizeFunc;
     private MouseInput mouseInput;
     private Map<Integer, Boolean> previousKeyState;
+    private TextRenderer textRenderer;
 
     public static class WindowOptions {
         public boolean compatibleProfile;
@@ -26,10 +30,12 @@ public class Window {
         public int height;
         public int ups;
         public int width;
+
     }
 
     public Window(String title, WindowOptions opts, Callable<Void> resizeFunc) {
         this.resizeFunc = resizeFunc;
+
         if (!glfwInit()) {
             throw new IllegalStateException("Unable to initialize GLFW");
         }
@@ -163,6 +169,7 @@ public class Window {
         glfwFreeCallbacks(windowHandle);
         glfwDestroyWindow(windowHandle);
         glfwTerminate();
+        textRenderer.cleanup();
     }
 
     public String getTitle() {
@@ -180,5 +187,13 @@ public class Window {
 
     public boolean isCursorVisible() {
         return isCursorVisible;
+    }
+
+    public TextRenderer getTextRenderer() {
+        return textRenderer;
+    }
+
+    public void setTextRenderer(TextRenderer textRenderer) {
+        this.textRenderer = textRenderer;
     }
 }

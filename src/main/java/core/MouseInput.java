@@ -10,6 +10,8 @@ import java.nio.DoubleBuffer;
 public class MouseInput {
     private Vector2f currentPos, displVec, previousPos;
     private boolean leftButtonPressed, rightButtonPressed;
+    private boolean leftButtonWasPressed = false;
+    private boolean leftButtonJustPressed = false;
     private double scrollOffsetY;
 
     public MouseInput(long windowHandle) {
@@ -23,6 +25,7 @@ public class MouseInput {
         });
         glfwSetMouseButtonCallback(windowHandle, (handle, button, action, mode) -> {
             leftButtonPressed = button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS;
+            if (button == GLFW_MOUSE_BUTTON_1) leftButtonJustPressed = (action == GLFW_PRESS);
             rightButtonPressed = button == GLFW_MOUSE_BUTTON_2 && action == GLFW_PRESS;
         });
 
@@ -55,6 +58,9 @@ public class MouseInput {
         glfwSetCursorPos(windowHandle, 1280 / 2.0, 720 / 2.0);
 
         previousPos.set(1280 / 2.0f, 720 / 2.0f);
+
+        leftButtonJustPressed = !leftButtonWasPressed && leftButtonPressed;
+        leftButtonWasPressed = leftButtonPressed;
     }
 
     public Vector2f getCurrentPos() {
@@ -79,5 +85,9 @@ public class MouseInput {
 
     public void resetScroll() {
         scrollOffsetY = 0;
+    }
+
+    public boolean isLeftButtonJustPressed() {
+        return leftButtonJustPressed;
     }
 }

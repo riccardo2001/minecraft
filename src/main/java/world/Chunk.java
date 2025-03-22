@@ -265,6 +265,13 @@ public class Chunk {
         }
     }
 
+    public void setDirty(boolean dirty) {
+        isDirty = dirty;
+        if (dirty) {
+            chunkEntity = null;
+        }
+    }
+
     public Block getBlock(int x, int y, int z) {
         return isValidPosition(x, y, z) ? blocks[x][y][z] : null;
     }

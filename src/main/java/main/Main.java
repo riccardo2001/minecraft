@@ -2,11 +2,15 @@ package main;
 
 import graphics.Render;
 import scene.Camera;
+import scene.RayCast;
 import scene.Scene;
 import ui.TextRenderer;
+import world.Block;
+import world.Chunk;
 
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 
 import core.Engine;
 import core.IAppLogic;
@@ -119,8 +123,46 @@ public class Main implements IAppLogic {
                 scene.getPlayer().getInventory().selectSlot(8);
             }
 
-            if(window.isKeyPressed(GLFW_KEY_F3)){
+            if (window.isKeyPressed(GLFW_KEY_F3)) {
                 render.getSceneRender().setUseCoordinates(!render.getSceneRender().isUsingCoordinates());
+            }
+
+            if (window.getMouseInput().isLeftButtonJustPressed() && !window.isCursorVisible()) {
+                RayCast ray = scene.getRayCast();
+                if (ray.hasHit()) {
+                    Vector3i blockPos = ray.getBlockPosition();
+                    
+                    // Rimuovi solo se c'è un blocco
+                    Block targetBlock = scene.getWorld().getBlock(blockPos.x, blockPos.y, blockPos.z);
+                    if(targetBlock != null && targetBlock.getType() != Block.BlockType.AIR) {
+                        Block.BlockType brokenType = targetBlock.getType();
+                        scene.getWorld().setBlock(blockPos.x, blockPos.y, blockPos.z, null);
+                        scene.getPlayer().getInventory().addBlock(brokenType);
+                        
+                        Chunk chunk = scene.getWorld().getChunkContaining(blockPos.x, blockPos.z);
+                        if (chunk != null) chunk.setDirty(true);
+                    }
+                }
+            }
+
+            // Placing con click destro
+            if (window.getMouseInput().isRightButtonPressed() && !window.isCursorVisible()) {
+                RayCast ray = scene.getRayCast();
+                if (ray.hasHit() && ray.getHitDistance() <= 5.0f) {
+                    Vector3i adjacentPos = calculateAdjacentPosition(ray.getBlockPosition(), ray.getHitFace());
+                    Block.BlockType selectedType = scene.getPlayer().getInventory().getSelectedBlock();
+
+                    if (scene.getWorld().getBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z) == null &&
+                            scene.getPlayer().getInventory().useSelectedBlock()) {
+
+                        scene.getWorld().setBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z, new Block(selectedType));
+
+                        // Segna il chunk come dirty
+                        Chunk chunk = scene.getWorld().getChunkContaining(adjacentPos.x, adjacentPos.z);
+                        if (chunk != null)
+                            chunk.setDirty(true);
+                    }
+                }
             }
 
             camera.addRotation(
@@ -141,5 +183,13 @@ public class Main implements IAppLogic {
 
     @Override
     public void cleanup() {
+    }
+
+    private Vector3i calculateAdjacentPosition(Vector3i blockPos, Block.Face face) {
+        return new Vector3i(blockPos).add(
+            face == Block.Face.LEFT ? -1 : face == Block.Face.RIGHT ? 1 : 0,
+            face == Block.Face.BOTTOM ? -1 : face == Block.Face.TOP ? 1 : 0,
+            face == Block.Face.FRONT ? 1 : face == Block.Face.BACK ? -1 : 0
+        );
     }
 }

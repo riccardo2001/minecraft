@@ -16,6 +16,21 @@ import static org.lwjgl.opengl.GL20.*;
 import static org.lwjgl.opengl.GL30.*;
 
 public class TextRenderer {
+
+        public static class TextEntry {
+                public final String text;
+                public final float x;
+                public final float y;
+                public final float scale;
+
+                public TextEntry(String text, float x, float y, float scale) {
+                        this.text = text;
+                        this.x = x;
+                        this.y = y;
+                        this.scale = scale;
+                }
+        }
+
         private ShaderProgram shader;
         private UniformsMap uniforms;
         private int vao;
@@ -25,6 +40,8 @@ public class TextRenderer {
         private static final float CHAR_WIDTH = 10f;
         private static final float CHAR_HEIGHT = 16f;
         private static final float SPACING = 5f;
+
+        private int bufferSize;
 
         public TextRenderer() {
                 initShader();
@@ -43,6 +60,7 @@ public class TextRenderer {
 
         private void initBuffers() {
                 maxVertices = 1024;
+                bufferSize = maxVertices * 4 * 4;
 
                 vao = glGenVertexArrays();
                 glBindVertexArray(vao);
@@ -56,6 +74,66 @@ public class TextRenderer {
 
                 glBindBuffer(GL_ARRAY_BUFFER, 0);
                 glBindVertexArray(0);
+        }
+
+        public void renderBatch(List<TextEntry> entries, Vector3f color, int windowWidth, int windowHeight) {
+                List<Float> vertices = new ArrayList<>();
+                for (TextEntry entry : entries) {
+                        processText(entry.text, entry.x, entry.y, entry.scale, vertices);
+                }
+                renderVertices(vertices, color, windowWidth, windowHeight);
+        }
+
+        private void processText(String text, float x, float y, float scale, List<Float> vertices) {
+                float cursorX = x;
+                for (char c : text.toCharArray()) {
+                        float[][] segments = getCharSegments(c);
+                        for (float[] seg : segments) {
+                                vertices.add(cursorX + seg[0] * scale);
+                                vertices.add(y + seg[1] * scale);
+                                vertices.add(cursorX + seg[2] * scale);
+                                vertices.add(y + seg[3] * scale);
+                        }
+                        cursorX += (CHAR_WIDTH * scale) + (SPACING * scale);
+                }
+        }
+
+        private void renderVertices(List<Float> vertices, Vector3f color, int windowWidth, int windowHeight) {
+                if (vertices.isEmpty())
+                        return;
+
+                java.nio.FloatBuffer floatBuffer = toFloatBuffer(vertices);
+                int requiredBytes = floatBuffer.remaining() * 4;
+
+                glBindVertexArray(vao);
+                glBindBuffer(GL_ARRAY_BUFFER, vbo);
+
+                // Resize buffer if needed
+                if (requiredBytes > bufferSize) {
+                        bufferSize = Math.max(requiredBytes * 2, bufferSize * 2);
+                        glBufferData(GL_ARRAY_BUFFER, bufferSize, GL_DYNAMIC_DRAW);
+                }
+                glBufferSubData(GL_ARRAY_BUFFER, 0, floatBuffer);
+
+                // Existing rendering code...
+                shader.bind();
+                uniforms.setUniform("color", color);
+                Matrix4f projection = new Matrix4f().ortho(0, windowWidth, windowHeight, 0, -1, 1);
+                uniforms.setUniform("projection", projection);
+
+                glDisable(GL_DEPTH_TEST);
+                glEnable(GL_BLEND);
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                glLineWidth(1.5f);
+
+                glDrawArrays(GL_LINES, 0, vertices.size() / 2);
+
+                glDisable(GL_BLEND);
+                glEnable(GL_DEPTH_TEST);
+
+                glBindBuffer(GL_ARRAY_BUFFER, 0);
+                glBindVertexArray(0);
+                shader.unbind();
         }
 
         public void renderText(String text, float x, float y, float scale, Window window) {

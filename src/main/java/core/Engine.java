@@ -48,7 +48,7 @@ public class Engine {
 
             if (targetFps <= 0 || now - lastFrameTime >= nsPerFrame) {
                 long frameDiffMillis = (now - lastFrameTime) / 1_000_000L;
-                appLogic.input(window, scene, (float) frameDiffMillis);
+                appLogic.input(window, scene, render, (float) frameDiffMillis);
                 render.render(window, scene);
                 window.update();
                 frames++;

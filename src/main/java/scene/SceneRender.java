@@ -9,6 +9,7 @@ import graphics.TextureAtlas;
 import graphics.TextureCacheAtlas;
 import graphics.UniformsMap;
 import ui.HUD;
+import ui.TextRenderer;
 import world.Block;
 import world.Chunk;
 import world.ChunkPosition;
@@ -28,6 +29,7 @@ public class SceneRender {
     private Crosshair crosshair;
     private BlockOutline blockOutline;
     private HUD hud;
+    private boolean isUseCoordinates = false;
 
     public SceneRender() {
         List<ShaderProgram.ShaderModuleData> modules = new ArrayList<>();
@@ -123,15 +125,31 @@ public class SceneRender {
             blockOutline.render(scene);
         }
 
-        renderCoordinates(scene, window);
+        if(isUseCoordinates){
+            renderCoordinates(scene, window);
+        }
 
         hud.render(scene.getPlayer().getInventory(), scene.getTextureCacheAtlas(), window);
     }
 
     public void renderCoordinates(Scene scene, Window window) {
         Vector3f pos = scene.getCamera().getPosition();
-        String coordText = String.format("X:%.1f Y:%.1f Z:%.1f", pos.x, pos.y, pos.z);
-        window.getTextRenderer().renderText(coordText, 10, 10, 1.1f, window);
+        List<TextRenderer.TextEntry> textEntries = new ArrayList<>();
+
+        textEntries.add(new TextRenderer.TextEntry(
+                String.format("X:%.1f Y:%.1f Z:%.1f", pos.x, pos.y, pos.z),
+                10,
+                10,
+                1.1f));
+
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        window.getTextRenderer().renderBatch(
+                textEntries,
+                new Vector3f(1, 1, 1),
+                window.getWidth(),
+                window.getHeight());
+        glDisable(GL_BLEND);
     }
 
     private void renderOtherEntities(Scene scene, UniformsMap activeUniformsMap) {
@@ -203,4 +221,11 @@ public class SceneRender {
         return blockOutline;
     }
 
+    public void setUseCoordinates(boolean useCoordinates) {
+        isUseCoordinates = useCoordinates;
+    }
+
+    public boolean isUsingCoordinates() {
+        return isUseCoordinates;
+    }
 }

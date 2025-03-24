@@ -25,17 +25,24 @@ public class ChunkMesh {
             for (int y = 0; y < Chunk.HEIGHT; y++) {
                 for (int z = 0; z < Chunk.DEPTH; z++) {
                     Block block = chunk.getBlock(x, y, z);
-
+                    
                     if (block != null && block.getType() != Block.BlockType.AIR) {
                         int worldX = chunk.getChunkX() * Chunk.WIDTH + x;
-                        int worldY = y;
                         int worldZ = chunk.getChunkZ() * Chunk.DEPTH + z;
-
+                        
+                        // Controlla tutti i blocchi adiacenti
                         for (Block.Face face : Block.Face.values()) {
-                            if (Block.shouldRenderFace(world, worldX, worldY, worldZ, face)) {
+                            int adjX = worldX + face.getOffsetX();
+                            int adjY = y + face.getOffsetY();
+                            int adjZ = worldZ + face.getOffsetZ();
+                            
+                            // Forza l'aggiornamento delle facce al confine dei chunk
+                            Block adjacent = world.getBlock(adjX, adjY, adjZ);
+                            if (adjacent == null || !adjacent.isOpaque()) {
                                 indexCount = addFaceToMesh(
-                                        positions, textureCoords, indices,
-                                        x, y, z, indexCount, face, block.getType());
+                                    positions, textureCoords, indices,
+                                    x, y, z, indexCount, face, block.getType()
+                                );
                             }
                         }
                     }

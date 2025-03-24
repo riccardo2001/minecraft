@@ -20,6 +20,8 @@ import core.Window;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
+import java.util.List;
+
 public class Main implements IAppLogic {
     private static final float MOUSE_SENSITIVITY = 0.1f;
     private static final float MOVEMENT_SPEED = 0.005f;
@@ -123,7 +125,7 @@ public class Main implements IAppLogic {
                 scene.getPlayer().getInventory().selectSlot(8);
             }
 
-            if (window.isKeyPressed(GLFW_KEY_F3)) {
+            if (window.isKeyJustPressed(GLFW_KEY_F3)) {
                 render.getSceneRender().setUseCoordinates(!render.getSceneRender().isUsingCoordinates());
             }
 
@@ -131,24 +133,29 @@ public class Main implements IAppLogic {
                 RayCast ray = scene.getRayCast();
                 if (ray.hasHit()) {
                     Vector3i blockPos = ray.getBlockPosition();
-                    
-                    // Rimuovi solo se c'è un blocco
                     Block targetBlock = scene.getWorld().getBlock(blockPos.x, blockPos.y, blockPos.z);
-                    if(targetBlock != null && targetBlock.getType() != Block.BlockType.AIR) {
-                        Block.BlockType brokenType = targetBlock.getType();
+
+                    if (targetBlock != null && targetBlock.getType() != Block.BlockType.AIR) {
                         scene.getWorld().setBlock(blockPos.x, blockPos.y, blockPos.z, null);
-                        scene.getPlayer().getInventory().addBlock(brokenType);
-                        
-                        Chunk chunk = scene.getWorld().getChunkContaining(blockPos.x, blockPos.z);
-                        if (chunk != null) chunk.setDirty(true);
+                        scene.getPlayer().getInventory().addBlock(targetBlock.getType());
+                        List<Chunk> affectedChunks = scene.getWorld().getAdjacentChunks(blockPos.x, blockPos.z);
+                        Chunk mainChunk = scene.getWorld().getChunkContaining(blockPos.x, blockPos.z);
+                        affectedChunks.add(mainChunk);
+
+                        for (Chunk chunk : affectedChunks) {
+                            if (chunk != null) {
+                                chunk.setDirty(true);
+                            }
+                        }
+
+                        scene.updateChunks();
                     }
                 }
             }
 
-            // Placing con click destro
-            if (window.getMouseInput().isRightButtonPressed() && !window.isCursorVisible()) {
+            if (window.getMouseInput().isRightButtonJustPressed() && !window.isCursorVisible()) {
                 RayCast ray = scene.getRayCast();
-                if (ray.hasHit() && ray.getHitDistance() <= 5.0f) {
+                if (ray.hasHit() && ray.getHitDistance() <= 10.0f) {
                     Vector3i adjacentPos = calculateAdjacentPosition(ray.getBlockPosition(), ray.getHitFace());
                     Block.BlockType selectedType = scene.getPlayer().getInventory().getSelectedBlock();
 
@@ -157,11 +164,12 @@ public class Main implements IAppLogic {
 
                         scene.getWorld().setBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z, new Block(selectedType));
 
-                        // Segna il chunk come dirty
                         Chunk chunk = scene.getWorld().getChunkContaining(adjacentPos.x, adjacentPos.z);
-                        if (chunk != null)
+                        if (chunk != null) {
                             chunk.setDirty(true);
+                        }
                     }
+                    scene.updateChunks();
                 }
             }
 
@@ -187,9 +195,8 @@ public class Main implements IAppLogic {
 
     private Vector3i calculateAdjacentPosition(Vector3i blockPos, Block.Face face) {
         return new Vector3i(blockPos).add(
-            face == Block.Face.LEFT ? -1 : face == Block.Face.RIGHT ? 1 : 0,
-            face == Block.Face.BOTTOM ? -1 : face == Block.Face.TOP ? 1 : 0,
-            face == Block.Face.FRONT ? 1 : face == Block.Face.BACK ? -1 : 0
-        );
+                face == Block.Face.LEFT ? -1 : face == Block.Face.RIGHT ? 1 : 0,
+                face == Block.Face.BOTTOM ? -1 : face == Block.Face.TOP ? 1 : 0,
+                face == Block.Face.FRONT ? 1 : face == Block.Face.BACK ? -1 : 0);
     }
 }

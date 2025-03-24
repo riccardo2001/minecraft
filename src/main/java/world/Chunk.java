@@ -282,4 +282,8 @@ public class Chunk {
                 z >= 0 && z < DEPTH;
     }
 
+    public ChunkMesh getChunkMesh() {
+        return chunkMesh;
+    }
+
 }

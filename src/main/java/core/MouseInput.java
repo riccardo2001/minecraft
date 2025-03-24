@@ -12,6 +12,8 @@ public class MouseInput {
     private boolean leftButtonPressed, rightButtonPressed;
     private boolean leftButtonWasPressed = false;
     private boolean leftButtonJustPressed = false;
+    private boolean rightButtonWasPressed = false;
+    private boolean rightButtonJustPressed = false;
     private double scrollOffsetY;
 
     public MouseInput(long windowHandle) {
@@ -27,6 +29,8 @@ public class MouseInput {
             leftButtonPressed = button == GLFW_MOUSE_BUTTON_1 && action == GLFW_PRESS;
             if (button == GLFW_MOUSE_BUTTON_1) leftButtonJustPressed = (action == GLFW_PRESS);
             rightButtonPressed = button == GLFW_MOUSE_BUTTON_2 && action == GLFW_PRESS;
+            if (button == GLFW_MOUSE_BUTTON_2) rightButtonJustPressed = (action == GLFW_PRESS);
+
         });
 
         glfwSetScrollCallback(windowHandle, (window, xoffset, yoffset) -> {
@@ -61,6 +65,9 @@ public class MouseInput {
 
         leftButtonJustPressed = !leftButtonWasPressed && leftButtonPressed;
         leftButtonWasPressed = leftButtonPressed;
+
+        rightButtonJustPressed = !rightButtonWasPressed && rightButtonPressed;
+        rightButtonWasPressed = rightButtonPressed;
     }
 
     public Vector2f getCurrentPos() {
@@ -89,5 +96,9 @@ public class MouseInput {
 
     public boolean isLeftButtonJustPressed() {
         return leftButtonJustPressed;
+    }
+
+    public boolean isRightButtonJustPressed() {
+        return rightButtonJustPressed;
     }
 }

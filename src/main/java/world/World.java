@@ -1,6 +1,8 @@
 package world;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class World {
@@ -84,5 +86,24 @@ public class World {
         int chunkX = Math.floorDiv(worldX, Chunk.WIDTH);
         int chunkZ = Math.floorDiv(worldZ, Chunk.DEPTH);
         return getChunk(chunkX, chunkZ);
+    }
+
+    public List<Chunk> getAdjacentChunks(int worldX, int worldZ) {
+        List<Chunk> chunks = new ArrayList<>();
+
+        // Calcola le coordinate del chunk corrente
+        int chunkX = Math.floorDiv(worldX, Chunk.WIDTH);
+        int chunkZ = Math.floorDiv(worldZ, Chunk.DEPTH);
+
+        // Controlla tutti i chunk nel raggio 3x3
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                Chunk chunk = getChunk(chunkX + dx, chunkZ + dz);
+                if (chunk != null) {
+                    chunks.add(chunk);
+                }
+            }
+        }
+        return chunks;
     }
 }

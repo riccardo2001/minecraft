@@ -19,7 +19,31 @@ public class Block {
     }
 
     public enum Face {
-        TOP, BOTTOM, FRONT, BACK, LEFT, RIGHT
+        TOP, BOTTOM, FRONT, BACK, LEFT, RIGHT;
+
+        public int getOffsetX() {
+            return switch (this) {
+                case LEFT -> -1;
+                case RIGHT -> 1;
+                default -> 0;
+            };
+        }
+        
+        public int getOffsetY() {
+            return switch (this) {
+                case BOTTOM -> -1;
+                case TOP -> 1;
+                default -> 0;
+            };
+        }
+        
+        public int getOffsetZ() {
+            return switch (this) {
+                case FRONT -> 1;
+                case BACK -> -1;
+                default -> 0;
+            };
+        }
     }
 
     public Block(BlockType type) {
@@ -37,25 +61,40 @@ public class Block {
     public boolean isOpaque() {
         return type != BlockType.AIR && type != BlockType.LEAVES;
     }
-    
+
     public static boolean shouldRenderFace(World world, int x, int y, int z, Face face) {
         int checkX = x;
         int checkY = y;
         int checkZ = z;
-        
+
         switch (face) {
-            case TOP: checkY = y + 1; break;
-            case BOTTOM: checkY = y - 1; break;
-            case FRONT: checkZ = z + 1; break;
-            case BACK: checkZ = z - 1; break;
-            case RIGHT: checkX = x + 1; break;
-            case LEFT: checkX = x - 1; break;
+            case TOP:
+                checkY++;
+                break;
+            case BOTTOM:
+                checkY--;
+                break;
+            case FRONT:
+                checkZ++;
+                break;
+            case BACK:
+                checkZ--;
+                break;
+            case RIGHT:
+                checkX++;
+                break;
+            case LEFT:
+                checkX--;
+                break;
         }
-        
+
         Block adjacentBlock = world.getBlock(checkX, checkY, checkZ);
-        return adjacentBlock == null || !adjacentBlock.isOpaque();
+        if (adjacentBlock == null) {
+            return true;
+        }
+        return !adjacentBlock.isOpaque();
     }
-    
+
     public static boolean isChunkVisible(Scene scene, Chunk chunk) {
         Camera camera = scene.getCamera();
 
@@ -65,7 +104,7 @@ public class Block {
         float chunkMaxX = (chunk.getChunkX() + 1) * Chunk.WIDTH * BLOCK_SIZE;
         float chunkMaxY = Chunk.HEIGHT * BLOCK_SIZE;
         float chunkMaxZ = (chunk.getChunkZ() + 1) * Chunk.DEPTH * BLOCK_SIZE;
-        
+
         var chunkMin = new org.joml.Vector3f(chunkMinX, chunkMinY, chunkMinZ);
         var chunkMax = new org.joml.Vector3f(chunkMaxX, chunkMaxY, chunkMaxZ);
 
@@ -73,14 +112,13 @@ public class Block {
             return false;
         }
 
-        float maxRenderDistanceSquared = 256.0f * 256.0f; 
+        float maxRenderDistanceSquared = 256.0f * 256.0f;
         Vector3f cameraPos = camera.getPosition();
         Vector3f chunkCenterPos = new Vector3f(
-            chunkMinX + (chunkMaxX - chunkMinX) / 2,
-            chunkMinY + (chunkMaxY - chunkMinY) / 2,
-            chunkMinZ + (chunkMaxZ - chunkMinZ) / 2
-        );
-        
+                chunkMinX + (chunkMaxX - chunkMinX) / 2,
+                chunkMinY + (chunkMaxY - chunkMinY) / 2,
+                chunkMinZ + (chunkMaxZ - chunkMinZ) / 2);
+
         float distSquared = cameraPos.distanceSquared(chunkCenterPos);
         if (distSquared > maxRenderDistanceSquared) {
             return false;

@@ -41,8 +41,6 @@ public class Engine {
             window.pollEvents();
             long now = System.nanoTime();
 
-            scene.updateChunks();
-
             if (now - lastUpdateTime >= nsPerUpdate) {
                 appLogic.update(window, scene, render);
                 lastUpdateTime = now;

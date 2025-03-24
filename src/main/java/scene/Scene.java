@@ -185,7 +185,7 @@ public class Scene {
     public void updateChunkMesh(String chunkId, Mesh newMesh) {
         Entity entity = entityMap.get(chunkId);
         if (entity != null) {
-            Model chunkModel = modelMap.get(entity.getModelId()); // Usa modelId unico
+            Model chunkModel = modelMap.get(entity.getModelId());
             if (chunkModel != null) {
                 chunkModel.getMeshList().clear();
                 chunkModel.getMeshList().add(newMesh);

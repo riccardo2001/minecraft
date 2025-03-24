@@ -150,13 +150,10 @@ public class Scene {
     }
 
     public void updateChunks() {
-        Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
-        
-        for (var entry : loadedChunks.entrySet()) {
-            Chunk chunk = entry.getValue();
+        List<Chunk> chunksToUpdate = new ArrayList<>(world.getLoadedChunks().values());
+        for (Chunk chunk : chunksToUpdate) {
             if (chunk.isDirty()) {
-                chunk.buildMesh(world, this);
-                chunk.setDirty(false);
+                chunk.rebuildFullMesh(world, this);
             }
         }
     }

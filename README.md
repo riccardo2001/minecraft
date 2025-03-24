@@ -190,7 +190,6 @@ find ~/minecraft/src/main/java -type f -name "*.java" -exec cat {} + > output.tx
 
 ## Planned Extensions
 
-- Block placing
 - Basic physics (gravity, collisions)
 - Inventory system
 - Crafting

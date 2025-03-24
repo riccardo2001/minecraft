@@ -82,10 +82,10 @@ public class World {
         }
     }
 
-    public Chunk getChunkContaining(int worldX, int worldZ) {
-        int chunkX = Math.floorDiv(worldX, Chunk.WIDTH);
-        int chunkZ = Math.floorDiv(worldZ, Chunk.DEPTH);
-        return getChunk(chunkX, chunkZ);
+    public Chunk getChunkContaining(int blockX, int blockZ) {
+        int chunkX = Math.floorDiv(blockX, Chunk.WIDTH);
+        int chunkZ = Math.floorDiv(blockZ, Chunk.DEPTH);
+        return loadedChunks.get(new ChunkPosition(chunkX, chunkZ));
     }
 
     public List<Chunk> getAdjacentChunks(int worldX, int worldZ) {

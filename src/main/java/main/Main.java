@@ -20,7 +20,9 @@ import core.Window;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class Main implements IAppLogic {
     private static final float MOUSE_SENSITIVITY = 0.1f;
@@ -138,14 +140,44 @@ public class Main implements IAppLogic {
                     if (targetBlock != null && targetBlock.getType() != Block.BlockType.AIR) {
                         scene.getWorld().setBlock(blockPos.x, blockPos.y, blockPos.z, null);
                         scene.getPlayer().getInventory().addBlock(targetBlock.getType());
-                        List<Chunk> affectedChunks = scene.getWorld().getAdjacentChunks(blockPos.x, blockPos.z);
-                        Chunk mainChunk = scene.getWorld().getChunkContaining(blockPos.x, blockPos.z);
-                        affectedChunks.add(mainChunk);
 
-                        for (Chunk chunk : affectedChunks) {
-                            if (chunk != null) {
-                                chunk.setDirty(true);
+                        // Nuova logica per chunk affetti
+                        Set<Chunk> affectedChunks = new HashSet<>();
+
+                        // 1. Converti coordinate blocco a coordinate chunk
+                        int chunkX = Math.floorDiv(blockPos.x, Chunk.WIDTH);
+                        int chunkZ = Math.floorDiv(blockPos.z, Chunk.DEPTH);
+
+                        // 2. Prendi chunk in un raggio di 2 chunk
+                        for (int dx = -2; dx <= 2; dx++) {
+                            for (int dz = -2; dz <= 2; dz++) {
+                                Chunk chunk = scene.getWorld().getChunk(chunkX + dx, chunkZ + dz);
+                                if (chunk != null) {
+                                    affectedChunks.add(chunk);
+                                }
                             }
+                        }
+
+                        // 3. Aggiungi chunk dai blocchi adiacenti
+                        Vector3i[] directions = {
+                                new Vector3i(1, 0, 0), new Vector3i(-1, 0, 0),
+                                new Vector3i(0, 0, 1), new Vector3i(0, 0, -1),
+                                new Vector3i(0, 1, 0), new Vector3i(0, -1, 0)
+                        };
+
+                        for (Vector3i dir : directions) {
+                            Vector3i adjacentPos = new Vector3i(blockPos).add(dir);
+                            Chunk adjacentChunk = scene.getWorld().getChunkContaining(
+                                    adjacentPos.x,
+                                    adjacentPos.z);
+                            if (adjacentChunk != null) {
+                                affectedChunks.add(adjacentChunk);
+                            }
+                        }
+
+                        // 4. Aggiorna i chunk
+                        for (Chunk chunk : affectedChunks) {
+                            chunk.setDirty(true);
                         }
 
                         scene.updateChunks();

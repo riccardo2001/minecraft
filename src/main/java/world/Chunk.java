@@ -267,9 +267,6 @@ public class Chunk {
 
     public void setDirty(boolean dirty) {
         isDirty = dirty;
-        if (dirty) {
-            chunkEntity = null;
-        }
     }
 
     public Block getBlock(int x, int y, int z) {
@@ -284,6 +281,29 @@ public class Chunk {
 
     public ChunkMesh getChunkMesh() {
         return chunkMesh;
+    }
+
+    public void rebuildFullMesh(World world, Scene scene) {
+        if (chunkMesh == null) {
+            chunkMesh = new ChunkMesh();
+        }
+        chunkMesh.buildMesh(this, world);
+        
+        // Inizializza chunkEntity se non esiste
+        if (chunkEntity == null) {
+            String modelId = "chunk_model_" + chunkX + "_" + chunkZ;
+            String entityId = "chunk_" + chunkX + "_" + chunkZ;
+            chunkEntity = new Entity(entityId, modelId, new Vector4f(0, 0, 1, 1));
+            chunkEntity.setPosition(
+                chunkX * WIDTH * Block.BLOCK_SIZE,
+                0,
+                chunkZ * DEPTH * Block.BLOCK_SIZE
+            );
+            scene.addChunkEntity(chunkEntity);
+        }
+        
+        scene.updateChunkMesh(chunkEntity.getId(), chunkMesh.getMesh());
+        setDirty(false);
     }
 
 }

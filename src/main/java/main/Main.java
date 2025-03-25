@@ -45,7 +45,7 @@ public class Main implements IAppLogic {
                 config.getInitialWorldX(), 
                 config.getInitialWorldZ()
         );
-        Logger.info("Mondo generato");
+        Logger.info("World generated");
     }
     
     private void initPlayer(Scene scene) {
@@ -55,17 +55,17 @@ public class Main implements IAppLogic {
                 config.getInitialPlayerY(),
                 config.getInitialWorldZ()
         );
-        Logger.info("Player posizionato");
+        Logger.info("Player positioned");
     }
     
     private void initUI(Window window) {
         window.setTextRenderer(new TextRenderer());
-        Logger.info("UI inizializzata");
+        Logger.info("UI inizialized");
     }
     
     private void initInputHandler() {
         inputHandler = new InputHandler();
-        Logger.info("Input handler inizializzato");
+        Logger.info("Input handler inizialized");
     }
     
     private void logSystemInfo() {
@@ -109,6 +109,6 @@ public class Main implements IAppLogic {
 
     @Override
     public void cleanup() {
-        Logger.info("Pulizia delle risorse in corso...");
+        Logger.info("Cleaning resources...");
     }
 }

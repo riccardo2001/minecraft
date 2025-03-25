@@ -1,234 +1,114 @@
 package main;
 
-import graphics.Render;
-import scene.Camera;
-import scene.RayCast;
 import scene.Scene;
-import ui.TextRenderer;
-import world.Block;
-import world.Chunk;
-
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector3i;
-
 import core.Engine;
 import core.IAppLogic;
-import core.MouseInput;
 import core.Window;
+import input.InputHandler;
+import rendering.Render;
+import rendering.ui.TextRenderer;
+import utils.Logger;
 
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 public class Main implements IAppLogic {
-    private static final float MOUSE_SENSITIVITY = 0.1f;
-    private static final float MOVEMENT_SPEED = 0.005f;
-
+    private InputHandler inputHandler;
+    private GameStateManager gameStateManager;
+    
     public static void main(String[] args) {
+        GameConfig config = GameConfig.getInstance();
+        
         Main main = new Main();
-        Window.WindowOptions opts = new Window.WindowOptions();
-
-        opts.width = 1280;
-        opts.height = 720;
-        opts.fps = 1000;
-        opts.ups = Engine.TARGET_UPS;
-        opts.compatibleProfile = false;
-
-        Engine gameEng = new Engine("Minecraft", opts, main);
+        
+        Window.WindowOptions opts = config.createWindowOptions();
+        
+        Engine gameEng = new Engine(config.getWindowTitle(), opts, main);
         gameEng.start();
     }
 
     @Override
     public void init(Window window, Scene scene, Render render) {
-        scene.getWorld().generateInitialWorld(0, 0);
-        scene.getCamera().setPosition(0f, 75f, 0f);
+        initWorld(scene);
+        initPlayer(scene);
+        initUI(window);
+        initInputHandler();
+        
+        gameStateManager = new GameStateManager(window, scene, render);
+        
+        logSystemInfo();
+    }
+    
+    private void initWorld(Scene scene) {
+        GameConfig config = GameConfig.getInstance();
+        scene.getWorld().generateInitialWorld(
+                config.getInitialWorldX(), 
+                config.getInitialWorldZ()
+        );
+        Logger.info("Mondo generato");
+    }
+    
+    private void initPlayer(Scene scene) {
+        GameConfig config = GameConfig.getInstance();
+        scene.getCamera().setPosition(
+                config.getInitialWorldX(),
+                config.getInitialPlayerY(),
+                config.getInitialWorldZ()
+        );
+        Logger.info("Player posizionato");
+    }
+    
+    private void initUI(Window window) {
         window.setTextRenderer(new TextRenderer());
-
-        System.out.println("World generated...");
-        System.out.println("OpenGL Vendor: " + glGetString(GL_VENDOR));
-        System.out.println("OpenGL Renderer: " + glGetString(GL_RENDERER));
-        System.out.println("OpenGL Version: " + glGetString(GL_VERSION));
-
+        Logger.info("UI inizializzata");
+    }
+    
+    private void initInputHandler() {
+        inputHandler = new InputHandler();
+        Logger.info("Input handler inizializzato");
+    }
+    
+    private void logSystemInfo() {
+        Logger.info("OpenGL Vendor: " + glGetString(GL_VENDOR));
+        Logger.info("OpenGL Renderer: " + glGetString(GL_RENDERER));
+        Logger.info("OpenGL Version: " + glGetString(GL_VERSION));
     }
 
     @Override
     public void input(Window window, Scene scene, Render render, float diffTimeMillis) {
-        boolean isPaused = window.isCursorVisible();
-
-        if (!isPaused) {
-            window.getMouseInput().input(window.getWindowHandle(), false);
-        }
-
-        float move = diffTimeMillis * MOVEMENT_SPEED;
-        Camera camera = scene.getCamera();
-        MouseInput mouseInput = window.getMouseInput();
-        Vector2f displVec = mouseInput.getDisplVec();
-
-        Vector3f moveDir = new Vector3f();
-
-        if (!isPaused) {
-            if (window.isKeyPressed(GLFW_KEY_W))
-                moveDir.add(camera.getForward().mul(1));
-            if (window.isKeyPressed(GLFW_KEY_S))
-                moveDir.add(camera.getForward().mul(-1));
-            if (window.isKeyPressed(GLFW_KEY_A))
-                moveDir.add(camera.getLeft().mul(1));
-            if (window.isKeyPressed(GLFW_KEY_D))
-                moveDir.add(camera.getRight().mul(1));
-
-            if (moveDir.lengthSquared() > 0) {
-                moveDir.normalize();
-            }
-
-            camera.move(moveDir, move);
-
-            if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL) && moveDir.lengthSquared() > 0) {
-                camera.dash(moveDir, 0.04f);
-            }
-
-            if (window.isKeyPressed(GLFW_KEY_SPACE))
-                camera.moveUp(move);
-            if (window.isKeyPressed(GLFW_KEY_LEFT_SHIFT))
-                camera.moveDown(move);
-
-            double scrollY = mouseInput.getScrollOffsetY();
-            if (scrollY != 0) {
-                int currentSlot = scene.getPlayer().getInventory().getSelectedSlot();
-                int slotChange = (int) Math.signum(scrollY);
-                int newSlot = currentSlot - slotChange;
-
-                newSlot = (newSlot + 9) % 9;
-
-                scene.getPlayer().getInventory().selectSlot(newSlot);
-                mouseInput.resetScroll();
-            }
-
-            if (window.isKeyPressed(GLFW_KEY_1)) {
-                scene.getPlayer().getInventory().selectSlot(0);
-            } else if (window.isKeyPressed(GLFW_KEY_2)) {
-                scene.getPlayer().getInventory().selectSlot(1);
-            } else if (window.isKeyPressed(GLFW_KEY_3)) {
-                scene.getPlayer().getInventory().selectSlot(2);
-            } else if (window.isKeyPressed(GLFW_KEY_4)) {
-                scene.getPlayer().getInventory().selectSlot(3);
-            } else if (window.isKeyPressed(GLFW_KEY_5)) {
-                scene.getPlayer().getInventory().selectSlot(4);
-            } else if (window.isKeyPressed(GLFW_KEY_6)) {
-                scene.getPlayer().getInventory().selectSlot(5);
-            } else if (window.isKeyPressed(GLFW_KEY_7)) {
-                scene.getPlayer().getInventory().selectSlot(6);
-            } else if (window.isKeyPressed(GLFW_KEY_8)) {
-                scene.getPlayer().getInventory().selectSlot(7);
-            } else if (window.isKeyPressed(GLFW_KEY_9)) {
-                scene.getPlayer().getInventory().selectSlot(8);
-            }
-
-            if (window.isKeyJustPressed(GLFW_KEY_F3)) {
-                render.getSceneRender().setUseCoordinates(!render.getSceneRender().isUsingCoordinates());
-            }
-
-            if (window.getMouseInput().isLeftButtonJustPressed() && !window.isCursorVisible()) {
-                RayCast ray = scene.getRayCast();
-                if (ray.hasHit()) {
-                    Vector3i blockPos = ray.getBlockPosition();
-                    Block targetBlock = scene.getWorld().getBlock(blockPos.x, blockPos.y, blockPos.z);
-
-                    if (targetBlock != null && targetBlock.getType() != Block.BlockType.AIR) {
-                        scene.getWorld().setBlock(blockPos.x, blockPos.y, blockPos.z, null);
-                        scene.getPlayer().getInventory().addBlock(targetBlock.getType());
-
-                        // Nuova logica per chunk affetti
-                        Set<Chunk> affectedChunks = new HashSet<>();
-
-                        // 1. Converti coordinate blocco a coordinate chunk
-                        int chunkX = Math.floorDiv(blockPos.x, Chunk.WIDTH);
-                        int chunkZ = Math.floorDiv(blockPos.z, Chunk.DEPTH);
-
-                        // 2. Prendi chunk in un raggio di 2 chunk
-                        for (int dx = -2; dx <= 2; dx++) {
-                            for (int dz = -2; dz <= 2; dz++) {
-                                Chunk chunk = scene.getWorld().getChunk(chunkX + dx, chunkZ + dz);
-                                if (chunk != null) {
-                                    affectedChunks.add(chunk);
-                                }
-                            }
-                        }
-
-                        // 3. Aggiungi chunk dai blocchi adiacenti
-                        Vector3i[] directions = {
-                                new Vector3i(1, 0, 0), new Vector3i(-1, 0, 0),
-                                new Vector3i(0, 0, 1), new Vector3i(0, 0, -1),
-                                new Vector3i(0, 1, 0), new Vector3i(0, -1, 0)
-                        };
-
-                        for (Vector3i dir : directions) {
-                            Vector3i adjacentPos = new Vector3i(blockPos).add(dir);
-                            Chunk adjacentChunk = scene.getWorld().getChunkContaining(
-                                    adjacentPos.x,
-                                    adjacentPos.z);
-                            if (adjacentChunk != null) {
-                                affectedChunks.add(adjacentChunk);
-                            }
-                        }
-
-                        // 4. Aggiorna i chunk
-                        for (Chunk chunk : affectedChunks) {
-                            chunk.setDirty(true);
-                        }
-
-                        scene.updateChunks();
-                    }
+        switch (gameStateManager.getCurrentState()) {
+            case PLAYING:
+                inputHandler.handleInput(window, scene, diffTimeMillis);
+                
+                if (window.isKeyJustPressed(GLFW_KEY_ESCAPE)) {
+                    gameStateManager.togglePause();
                 }
-            }
-
-            if (window.getMouseInput().isRightButtonJustPressed() && !window.isCursorVisible()) {
-                RayCast ray = scene.getRayCast();
-                if (ray.hasHit() && ray.getHitDistance() <= 10.0f) {
-                    Vector3i adjacentPos = calculateAdjacentPosition(ray.getBlockPosition(), ray.getHitFace());
-                    Block.BlockType selectedType = scene.getPlayer().getInventory().getSelectedBlock();
-
-                    if (scene.getWorld().getBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z) == null &&
-                            scene.getPlayer().getInventory().useSelectedBlock()) {
-
-                        scene.getWorld().setBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z, new Block(selectedType));
-
-                        Chunk chunk = scene.getWorld().getChunkContaining(adjacentPos.x, adjacentPos.z);
-                        if (chunk != null) {
-                            chunk.setDirty(true);
-                        }
-                    }
-                    scene.updateChunks();
+                
+                if (window.isKeyJustPressed(GLFW_KEY_F3)) {
+                    render.getSceneRender().setUseCoordinates(
+                            !render.getSceneRender().isUsingCoordinates()
+                    );
                 }
-            }
-
-            camera.addRotation(
-                    (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),
-                    (float) Math.toRadians(displVec.y * MOUSE_SENSITIVITY));
+                break;
+                
+            case PAUSED:
+                if (window.isKeyJustPressed(GLFW_KEY_ESCAPE)) {
+                    gameStateManager.togglePause();
+                }
+                break;
+                
+            default:
+                break;
         }
     }
 
     @Override
     public void update(Window window, Scene scene, Render render) {
-        float playerX = scene.getCamera().getPosition().x;
-        float playerZ = scene.getCamera().getPosition().z;
-
-        scene.updateWorldGeneration(playerX, playerZ);
-        render.updateBlockOutline(scene);
-
+        gameStateManager.update(0);
     }
 
     @Override
     public void cleanup() {
-    }
-
-    private Vector3i calculateAdjacentPosition(Vector3i blockPos, Block.Face face) {
-        return new Vector3i(blockPos).add(
-                face == Block.Face.LEFT ? -1 : face == Block.Face.RIGHT ? 1 : 0,
-                face == Block.Face.BOTTOM ? -1 : face == Block.Face.TOP ? 1 : 0,
-                face == Block.Face.FRONT ? 1 : face == Block.Face.BACK ? -1 : 0);
+        Logger.info("Pulizia delle risorse in corso...");
     }
 }

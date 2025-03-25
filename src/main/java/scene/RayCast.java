@@ -3,7 +3,7 @@ package scene;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
 import world.World;
-import world.Block;
+import world.blocks.Block;
 
 public class RayCast {
 

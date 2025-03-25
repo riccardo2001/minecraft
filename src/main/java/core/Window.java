@@ -2,7 +2,8 @@ package core;
 
 import org.lwjgl.glfw.GLFWVidMode;
 
-import ui.TextRenderer;
+import input.MouseInput;
+import rendering.ui.TextRenderer;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,10 +20,10 @@ public class Window {
     private boolean isCursorVisible = false;
     private boolean isPaused = false;
     private String title;
-    private Callable<Void> resizeFunc;
     private MouseInput mouseInput;
-    private Map<Integer, Boolean> previousKeyState;
     private TextRenderer textRenderer;
+    private Callable<Void> resizeFunc;
+    private Map<Integer, Boolean> previousKeyState;
 
     public static class WindowOptions {
         public boolean compatibleProfile;
@@ -30,7 +31,6 @@ public class Window {
         public int height;
         public int ups;
         public int width;
-
     }
 
     public Window(String title, WindowOptions opts, Callable<Void> resizeFunc) {
@@ -72,15 +72,19 @@ public class Window {
         });
 
         glfwMakeContextCurrent(windowHandle);
+
         if (opts.fps > 0) {
             glfwSwapInterval(0);
         } else {
             glfwSwapInterval(1);
         }
+
         glfwShowWindow(windowHandle);
 
         int[] wArr = new int[1], hArr = new int[1];
+
         glfwGetFramebufferSize(windowHandle, wArr, hArr);
+
         width = wArr[0];
         height = hArr[0];
 
@@ -92,7 +96,6 @@ public class Window {
         isPaused = !isPaused;
         if (isPaused) {
             glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-
             isCursorVisible = true;
         } else {
             glfwSetInputMode(windowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -122,12 +125,17 @@ public class Window {
         glfwSwapBuffers(windowHandle);
     }
 
-    public boolean windowShouldClose() {
-        return glfwWindowShouldClose(windowHandle);
+    public void renderPauseOverlay() {
+        if (isPaused) {
+            glClearColor(0.3f, 0.3f, 0.3f, 0.7f);
+            glClear(GL_COLOR_BUFFER_BIT);
+        } else {
+            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        }
     }
 
-    public MouseInput getMouseInput() {
-        return mouseInput;
+    public boolean windowShouldClose() {
+        return glfwWindowShouldClose(windowHandle);
     }
 
     public boolean isKeyPressed(int keyCode) {
@@ -148,6 +156,17 @@ public class Window {
         return isKeyPressed(keyCode) && !previous;
     }
 
+    public void cleanup() {
+        glfwFreeCallbacks(windowHandle);
+        glfwDestroyWindow(windowHandle);
+        glfwTerminate();
+        textRenderer.cleanup();
+    }
+
+    public MouseInput getMouseInput() {
+        return mouseInput;
+    }
+
     public int getWidth() {
         return width;
     }
@@ -165,24 +184,8 @@ public class Window {
         glfwSetWindowTitle(windowHandle, title);
     }
 
-    public void cleanup() {
-        glfwFreeCallbacks(windowHandle);
-        glfwDestroyWindow(windowHandle);
-        glfwTerminate();
-        textRenderer.cleanup();
-    }
-
     public String getTitle() {
         return title;
-    }
-
-    public void renderPauseOverlay() {
-        if (isPaused) {
-            glClearColor(0.3f, 0.3f, 0.3f, 0.7f);
-            glClear(GL_COLOR_BUFFER_BIT);
-        } else {
-            glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        }
     }
 
     public boolean isCursorVisible() {

@@ -3,6 +3,8 @@ package scene;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
+import scene.culling.Plane;
+
 public class Frustum {
     private Plane[] planes;
 

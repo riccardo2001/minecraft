@@ -1,6 +1,6 @@
 package core;
 
-import graphics.Render;
+import rendering.Render;
 import scene.Scene;
 
 public class Engine {
@@ -73,10 +73,6 @@ public class Engine {
         scene.cleanup();
     }
 
-    private void resize() {
-        scene.resize(window.getWidth(), window.getHeight());
-    }
-
     public void start() {
         running = true;
         run();
@@ -84,5 +80,9 @@ public class Engine {
 
     public void stop() {
         running = false;
+    }
+
+    private void resize() {
+        scene.resize(window.getWidth(), window.getHeight());
     }
 }

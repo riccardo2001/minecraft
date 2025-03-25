@@ -1,7 +1,7 @@
 #version 330
 
 in vec2 outTextCoord;
-in vec3 vertexPos;      // Posizione del vertice per calcolare la nebbia
+in vec3 vertexPos; 
 
 out vec4 fragColor;
 

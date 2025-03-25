@@ -1,6 +1,6 @@
 package core;
 
-import graphics.Render;
+import rendering.Render;
 import scene.Scene;
 
 public interface IAppLogic {

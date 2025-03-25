@@ -274,7 +274,7 @@ public class Scene {
                 for (int xOffset = -1; xOffset <= 1; xOffset++) {
                     Block block = world.getBlock(x + xOffset, y + yOffset, z + zOffset);
                     if (block != null && block.isSolid()) {
-                        System.out.println("Solid block found at: (" +
+                        Logger.info("Solid block found at: (" +
                                 (x + xOffset) + "," +
                                 (y + yOffset) + "," +
                                 (z + zOffset) + "), type: " +
@@ -285,7 +285,7 @@ public class Scene {
         }
 
         Vector3f direction = camera.getFrontVector();
-        System.out.println("Looking direction: " + direction);
+        Logger.info("Looking direction: " + direction);
 
         for (int i = 1; i <= 5; i++) {
             int targetX = (int) Math.floor(position.x + direction.x * i);
@@ -293,7 +293,7 @@ public class Scene {
             int targetZ = (int) Math.floor(position.z + direction.z * i);
 
             Block block = world.getBlock(targetX, targetY, targetZ);
-            System.out.println("Block at distance " + i + " (" +
+            Logger.info("Block at distance " + i + " (" +
                     targetX + "," + targetY + "," + targetZ + "): " +
                     (block != null ? block.getType() : "null"));
         }

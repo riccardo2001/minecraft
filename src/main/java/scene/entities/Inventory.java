@@ -16,13 +16,33 @@ public class Inventory {
     }
 
     public void addBlock(BlockType type) {
-        items.put(type, items.getOrDefault(type, 0) + 1);
+        int count = items.getOrDefault(type, 0);
+        items.put(type, count + 1);
+        
+        if(count == 0) {
+            addToFirstEmptySlot(type);
+        }
+    }
+
+    private void addToFirstEmptySlot(BlockType type) {
+        for(int i = 0; i < hotbar.length; i++) {
+            if(hotbar[i] == null) {
+                hotbar[i] = type;
+                break;
+            }
+        }
     }
 
     public boolean useSelectedBlock() {
         BlockType type = hotbar[selectedSlot];
-        if (items.getOrDefault(type, 0) > 0) {
-            items.put(type, items.get(type) - 1);
+        if(type == null) return false;
+        
+        int count = items.getOrDefault(type, 0);
+        if(count > 0) {
+            items.put(type, count - 1);
+            if(count - 1 == 0) {
+                hotbar[selectedSlot] = null;
+            }
             return true;
         }
         return false;

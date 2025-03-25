@@ -1,15 +1,15 @@
 package utils;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import org.apache.logging.log4j.LogManager;
 
 public class Logger {
+    final static org.apache.logging.log4j.Logger logger = LogManager.getLogger(Logger.class);
+
     public enum LogLevel {
         DEBUG, INFO, WARNING, ERROR
     }
     
     private static LogLevel currentLevel = LogLevel.INFO;
-    private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm:ss");
     
     public static void setLogLevel(LogLevel level) {
         currentLevel = level;
@@ -40,7 +40,19 @@ public class Logger {
     }
     
     private static void log(LogLevel level, String message) {
-        String timestamp = LocalDateTime.now().format(formatter);
-        System.out.println("[" + timestamp + "][" + level + "] " + message);
+        switch (level) {
+            case DEBUG:
+                logger.debug(message);
+                break;
+            case INFO:
+                logger.info(message);
+                break;
+            case WARNING:
+                logger.warn(message);
+                break;
+            case ERROR:
+                logger.error(message);
+                break;
+        }
     }
 }

@@ -3,16 +3,17 @@ package scene;
 import org.joml.Vector3f;
 import org.joml.Vector4f;
 
-import entities.Player;
-import graphics.Mesh;
-import graphics.Model;
-import graphics.Projection;
-import graphics.TextureCacheAtlas;
-import world.Block;
-import world.Block.BlockType;
-import world.Chunk;
-import world.ChunkPosition;
+import rendering.meshes.Mesh;
+import rendering.meshes.Model;
+import rendering.textures.TextureCacheAtlas;
+import scene.entities.Player;
+import utils.Logger;
+import world.chunks.Chunk;
+import world.chunks.ChunkPosition;
 import world.World;
+import world.blocks.Block;
+import world.blocks.Block.BlockType;
+
 import java.util.*;
 
 public class Scene {
@@ -256,7 +257,6 @@ public class Scene {
 
     public void debugWorldInfo() {
         if (world == null) {
-            System.out.println("DEBUG: World is null!");
             return;
         }
 
@@ -266,8 +266,8 @@ public class Scene {
         int y = (int) Math.floor(position.y);
         int z = (int) Math.floor(position.z);
 
-        System.out.println("DEBUG WORLD INFO:");
-        System.out.println("Camera at block: (" + x + "," + y + "," + z + ")");
+        Logger.info("DEBUG WORLD INFO:");
+        Logger.info("Camera at block: (" + x + "," + y + "," + z + ")");
 
         for (int yOffset = -1; yOffset <= 1; yOffset++) {
             for (int zOffset = -1; zOffset <= 1; zOffset++) {

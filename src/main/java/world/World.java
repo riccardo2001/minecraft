@@ -4,37 +4,39 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Consumer;
+
+import world.blocks.Block;
+import world.chunks.Chunk;
+import world.chunks.ChunkPosition;
+import world.events.WorldEvent;
+import world.events.WorldEvent.BlockChangeEvent;
+import world.events.WorldEvent.ChunkLoadEvent;
+import world.events.WorldEvent.ChunkUnloadEvent;
 
 public class World {
     private Map<ChunkPosition, Chunk> loadedChunks;
     private int renderDistance = 8;
+    private List<Consumer<WorldEvent>> eventListeners;
 
     public World() {
         this.loadedChunks = new HashMap<>();
+        this.eventListeners = new CopyOnWriteArrayList<>();
     }
-
-    public Map<ChunkPosition, Chunk> getLoadedChunks() {
-        return loadedChunks;
+    
+    public void addEventListener(Consumer<WorldEvent> listener) {
+        eventListeners.add(listener);
     }
-
-    public Chunk getChunk(int chunkX, int chunkZ) {
-        ChunkPosition position = new ChunkPosition(chunkX, chunkZ);
-        return loadedChunks.get(position);
+    
+    public void removeEventListener(Consumer<WorldEvent> listener) {
+        eventListeners.remove(listener);
     }
-
-    public int getRenderDistance() {
-        return renderDistance;
-    }
-
-    public int getTerrainHeight(int globalX, int globalZ) {
-        double hillFactor = 20.0;
-        double frequency = 0.05;
-
-        double noiseX = globalX * frequency;
-        double noiseZ = globalZ * frequency;
-
-        double height = Math.sin(noiseX) * Math.cos(noiseZ) * hillFactor;
-        return 64 + (int) height;
+    
+    private void fireEvent(WorldEvent event) {
+        for (Consumer<WorldEvent> listener : eventListeners) {
+            listener.accept(event);
+        }
     }
 
     public void generateInitialWorld(float centerX, float centerZ) {
@@ -49,7 +51,9 @@ public class World {
                 ChunkPosition chunkPos = new ChunkPosition(chunkX, chunkZ);
 
                 if (!loadedChunks.containsKey(chunkPos)) {
-                    loadedChunks.put(chunkPos, new Chunk(chunkX, chunkZ, this));
+                    Chunk chunk = new Chunk(chunkX, chunkZ, this);
+                    loadedChunks.put(chunkPos, chunk);
+                    fireEvent(new ChunkLoadEvent(chunk));
                 }
             }
         }
@@ -78,7 +82,11 @@ public class World {
         if (chunk != null) {
             int localX = Math.floorMod(x, Chunk.WIDTH);
             int localZ = Math.floorMod(z, Chunk.DEPTH);
+            
+            Block oldBlock = chunk.getBlock(localX, y, localZ);
             chunk.setBlock(localX, y, localZ, block);
+            
+            fireEvent(new BlockChangeEvent(x, y, z, oldBlock, block));
         }
     }
 
@@ -91,11 +99,9 @@ public class World {
     public List<Chunk> getAdjacentChunks(int worldX, int worldZ) {
         List<Chunk> chunks = new ArrayList<>();
 
-        // Calcola le coordinate del chunk corrente
         int chunkX = Math.floorDiv(worldX, Chunk.WIDTH);
         int chunkZ = Math.floorDiv(worldZ, Chunk.DEPTH);
 
-        // Controlla tutti i chunk nel raggio 3x3
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 Chunk chunk = getChunk(chunkX + dx, chunkZ + dz);
@@ -105,5 +111,51 @@ public class World {
             }
         }
         return chunks;
+    }
+
+    public Map<ChunkPosition, Chunk> getLoadedChunks() {
+        return loadedChunks;
+    }
+
+    public Chunk getChunk(int chunkX, int chunkZ) {
+        ChunkPosition position = new ChunkPosition(chunkX, chunkZ);
+        return loadedChunks.get(position);
+    }
+
+    public int getRenderDistance() {
+        return renderDistance;
+    }
+
+    public int getTerrainHeight(int globalX, int globalZ) {
+        double hillFactor = 20.0;
+        double frequency = 0.05;
+
+        double noiseX = globalX * frequency;
+        double noiseZ = globalZ * frequency;
+
+        double height = Math.sin(noiseX) * Math.cos(noiseZ) * hillFactor;
+        return 64 + (int) height;
+    }
+
+    public void unloadDistantChunks(float centerX, float centerZ) {
+        int centerChunkX = (int) Math.floor(centerX / (Chunk.WIDTH * Block.BLOCK_SIZE));
+        int centerChunkZ = (int) Math.floor(centerZ / (Chunk.DEPTH * Block.BLOCK_SIZE));
+        
+        List<ChunkPosition> chunksToUnload = new ArrayList<>();
+        
+        for (ChunkPosition pos : loadedChunks.keySet()) {
+            int dx = pos.getX() - centerChunkX;
+            int dz = pos.getZ() - centerChunkZ;
+            int distanceSquared = dx * dx + dz * dz;
+            
+            if (distanceSquared > renderDistance * renderDistance) {
+                chunksToUnload.add(pos);
+            }
+        }
+        
+        for (ChunkPosition pos : chunksToUnload) {
+            loadedChunks.remove(pos);
+            fireEvent(new ChunkUnloadEvent(pos));
+        }
     }
 }

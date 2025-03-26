@@ -7,13 +7,11 @@ import world.blocks.Block;
 import world.generation.WorldGenerator;
 
 import org.joml.Vector4f;
-import java.util.Random;
 
 public class Chunk {
     public static final int WIDTH = 16;
     public static final int HEIGHT = 256;
     public static final int DEPTH = 16;
-    private final World world;
 
     private final int chunkX;
     private final int chunkZ;
@@ -21,21 +19,17 @@ public class Chunk {
     private boolean isDirty;
     private ChunkMesh chunkMesh;
     private Entity chunkEntity;
-    private Random random;
 
     public Chunk(int chunkX, int chunkZ, World world) {
         this.chunkX = chunkX;
         this.chunkZ = chunkZ;
-        this.world = world;
         this.blocks = new Block[WIDTH][HEIGHT][DEPTH];
         this.isDirty = true;
-        long seed = (chunkX * 0x5F24F) ^ (chunkZ * 0x9E3779B9L) ^ 0xDEADBEEFL;
-        random = new Random(seed);
         generateTerrain();
     }
 
     private void generateTerrain() {
-        WorldGenerator generator = new WorldGenerator(world);
+        WorldGenerator generator = new WorldGenerator();
         generator.generateBaseTerrain(this);
         generator.generateTrees(this);
     }
@@ -72,7 +66,6 @@ public class Chunk {
         }
         chunkMesh.buildMesh(this, world);
 
-        // Inizializza chunkEntity se non esiste
         if (chunkEntity == null) {
             String modelId = "chunk_model_" + chunkX + "_" + chunkZ;
             String entityId = "chunk_" + chunkX + "_" + chunkZ;

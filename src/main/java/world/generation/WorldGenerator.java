@@ -2,18 +2,15 @@ package world.generation;
 
 import java.util.Random;
 
-import world.World;
 import world.blocks.Block;
 import world.blocks.BlockFactory;
 import world.chunks.Chunk;
 
 
 public class WorldGenerator {
-    private final World world;
     private final BlockFactory blockFactory;
     
-    public WorldGenerator(World world) {
-        this.world = world;
+    public WorldGenerator() {
         this.blockFactory = BlockFactory.getInstance();
     }
     
@@ -22,7 +19,7 @@ public class WorldGenerator {
             for (int z = 0; z < Chunk.DEPTH; z++) {
                 int globalX = chunk.getChunkX() * Chunk.WIDTH + x;
                 int globalZ = chunk.getChunkZ() * Chunk.DEPTH + z;
-                int terrainHeight = world.getTerrainHeight(globalX, globalZ);
+                int terrainHeight = getTerrainHeight(globalX, globalZ);
 
                 for (int y = 0; y < Chunk.HEIGHT; y++) {
                     Block.BlockType blockType = determineBlockType(y, terrainHeight);
@@ -74,7 +71,7 @@ public class WorldGenerator {
 
             int globalX = chunk.getChunkX() * Chunk.WIDTH + treeX;
             int globalZ = chunk.getChunkZ() * Chunk.DEPTH + treeZ;
-            int terrainHeight = world.getTerrainHeight(globalX, globalZ);
+            int terrainHeight = getTerrainHeight(globalX, globalZ);
 
             Block block = chunk.getBlock(treeX, terrainHeight - 1, treeZ);
             if (block != null && block.getType() == Block.BlockType.GRASS) {
@@ -202,5 +199,16 @@ public class WorldGenerator {
                 }
             }
         }
+    }
+
+    public int getTerrainHeight(int globalX, int globalZ) {
+        double hillFactor = 20.0;
+        double frequency = 0.05;
+
+        double noiseX = globalX * frequency;
+        double noiseZ = globalZ * frequency;
+
+        double height = Math.sin(noiseX) * Math.cos(noiseZ) * hillFactor;
+        return 64 + (int) height;
     }
 }

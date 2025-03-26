@@ -17,8 +17,8 @@ import world.events.WorldEvent.ChunkUnloadEvent;
 
 public class World {
     private Map<ChunkPosition, Chunk> loadedChunks;
-    private int renderDistance = 8;
     private List<Consumer<WorldEvent>> eventListeners;
+    private int renderDistance = 8;
 
     public World() {
         this.loadedChunks = new HashMap<>();
@@ -124,17 +124,6 @@ public class World {
 
     public int getRenderDistance() {
         return renderDistance;
-    }
-
-    public int getTerrainHeight(int globalX, int globalZ) {
-        double hillFactor = 20.0;
-        double frequency = 0.05;
-
-        double noiseX = globalX * frequency;
-        double noiseZ = globalZ * frequency;
-
-        double height = Math.sin(noiseX) * Math.cos(noiseZ) * hillFactor;
-        return 64 + (int) height;
     }
 
     public void unloadDistantChunks(float centerX, float centerZ) {

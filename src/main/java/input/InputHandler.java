@@ -160,7 +160,32 @@ public class InputHandler {
     private void handleBlockPlacement(Scene scene) {
         RayCast ray = scene.getRayCast();
         if (ray.hasHit() && ray.getHitDistance() <= 10.0f) {
-            Vector3i adjacentPos = Block.calculateAdjacentPosition(ray.getBlockPosition(), ray.getHitFace());
+            Vector3i blockPos = ray.getBlockPosition();
+            Block.Face hitFace = ray.getHitFace();
+            
+            Vector3i adjacentPos = new Vector3i(blockPos);
+            
+            switch (hitFace) {
+                case FRONT:
+                    adjacentPos.z -= 1;
+                    break;
+                case BACK:
+                    adjacentPos.z += 1;
+                    break;
+                case RIGHT:
+                    adjacentPos.x += 1;
+                    break;
+                case LEFT:
+                    adjacentPos.x -= 1;
+                    break;
+                case TOP:
+                    adjacentPos.y += 1;
+                    break;
+                case BOTTOM:
+                    adjacentPos.y -= 1;
+                    break;
+            }
+            
             Block.BlockType selectedType = scene.getPlayer().getInventory().getSelectedBlock();
 
             if (scene.getWorld().getBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z) == null &&
@@ -168,10 +193,21 @@ public class InputHandler {
 
                 scene.getWorld().setBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z, new Block(selectedType));
 
-                Chunk chunk = scene.getWorld().getChunkContaining(adjacentPos.x, adjacentPos.z);
-                if (chunk != null) {
-                    chunk.setDirty(true);
+                // Aggiornamento di tutti i chunk potenzialmente influenzati
+                int chunkX = Math.floorDiv(adjacentPos.x, Chunk.WIDTH);
+                int chunkZ = Math.floorDiv(adjacentPos.z, Chunk.DEPTH);
+                
+                // Aggiorna il chunk contenente il blocco e tutti i chunk adiacenti
+                // per evitare vuoti nel rendering
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        Chunk chunk = scene.getWorld().getChunk(chunkX + dx, chunkZ + dz);
+                        if (chunk != null) {
+                            chunk.setDirty(true);
+                        }
+                    }
                 }
+                
                 scene.updateChunks();
             }
         }

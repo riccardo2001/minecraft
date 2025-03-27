@@ -3,7 +3,6 @@ package input;
 import scene.Camera;
 import scene.RayCast;
 import scene.Scene;
-import world.World;
 import world.blocks.Block;
 import world.chunks.Chunk;
 
@@ -12,9 +11,6 @@ import org.joml.Vector3f;
 import org.joml.Vector3i;
 
 import core.Window;
-
-import java.util.HashSet;
-import java.util.Set;
 
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -117,43 +113,30 @@ public class InputHandler {
             Block targetBlock = scene.getWorld().getBlock(blockPos.x, blockPos.y, blockPos.z);
 
             if (targetBlock != null && targetBlock.getType() != Block.BlockType.AIR) {
-                scene.getWorld().setBlock(blockPos.x, blockPos.y, blockPos.z, null);
-                scene.getPlayer().getInventory().addBlock(targetBlock.getType());
+                // Operazione sincrona immediata
+                synchronized (scene.getWorld().getLoadedChunks()) {
+                    // 1. Rimozione blocco
+                    scene.getWorld().setBlock(blockPos.x, blockPos.y, blockPos.z, null);
+                    scene.getPlayer().getInventory().addBlock(targetBlock.getType());
 
-                World world = scene.getWorld();
-                int chunkX = Math.floorDiv(blockPos.x, Chunk.WIDTH);
-                int chunkZ = Math.floorDiv(blockPos.z, Chunk.DEPTH);
+                    // 2. Calcolo chunk interessati
+                    int chunkX = Math.floorDiv(blockPos.x, Chunk.WIDTH);
+                    int chunkZ = Math.floorDiv(blockPos.z, Chunk.DEPTH);
 
-                // Mark chunks in a 3x3 area around the affected chunk
-                for (int dx = -1; dx <= 1; dx++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        Chunk chunk = world.getChunk(chunkX + dx, chunkZ + dz);
-                        if (chunk != null) {
-                            chunk.setDirty(true);
+                    // 3. Aggiornamento immediato mesh
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            Chunk chunk = scene.getWorld().getChunk(chunkX + dx, chunkZ + dz);
+                            if (chunk != null) {
+                                chunk.setDirty(true);
+                                chunk.rebuildFullMesh(scene.getWorld(), scene); // Sincrono
+                            }
                         }
                     }
+
+                    // 4. Aggiornamento immediato delle entità
+                    scene.updateChunks();
                 }
-
-                // Check adjacent blocks for cross-chunk changes
-                Vector3i[] directions = {
-                        new Vector3i(1, 0, 0), new Vector3i(-1, 0, 0),
-                        new Vector3i(0, 0, 1), new Vector3i(0, 0, -1),
-                        new Vector3i(0, 1, 0), new Vector3i(0, -1, 0)
-                };
-
-                for (Vector3i dir : directions) {
-                    Vector3i adjacentPos = new Vector3i(blockPos).add(dir);
-                    int adjChunkX = Math.floorDiv(adjacentPos.x, Chunk.WIDTH);
-                    int adjChunkZ = Math.floorDiv(adjacentPos.z, Chunk.DEPTH);
-                    if (adjChunkX != chunkX || adjChunkZ != chunkZ) {
-                        Chunk adjacentChunk = world.getChunk(adjChunkX, adjChunkZ);
-                        if (adjacentChunk != null) {
-                            adjacentChunk.setDirty(true);
-                        }
-                    }
-                }
-
-                scene.updateChunks();
             }
         }
     }
@@ -171,16 +154,31 @@ public class InputHandler {
 
             Block.BlockType selectedType = scene.getPlayer().getInventory().getSelectedBlock();
 
-            if (scene.getWorld().getBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z) == null &&
-                    scene.getPlayer().getInventory().useSelectedBlock()) {
+            synchronized (scene.getWorld().getLoadedChunks()) {
+                if (scene.getWorld().getBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z) == null &&
+                        scene.getPlayer().getInventory().useSelectedBlock()) {
 
-                scene.getWorld().setBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z, new Block(selectedType));
+                    // 1. Operazione sincrona di modifica del mondo
+                    scene.getWorld().setBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z, new Block(selectedType));
 
-                Chunk chunk = scene.getWorld().getChunkContaining(adjacentPos.x, adjacentPos.z);
-                if (chunk != null) {
-                    chunk.setDirty(true);
+                    // 2. Calcolo chunk interessati (3x3 area)
+                    int chunkX = Math.floorDiv(adjacentPos.x, Chunk.WIDTH);
+                    int chunkZ = Math.floorDiv(adjacentPos.z, Chunk.DEPTH);
+
+                    // 3. Aggiornamento mesh immediato per chunk vicini
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dz = -1; dz <= 1; dz++) {
+                            Chunk chunk = scene.getWorld().getChunk(chunkX + dx, chunkZ + dz);
+                            if (chunk != null) {
+                                chunk.setDirty(true);
+                                chunk.rebuildFullMesh(scene.getWorld(), scene); // Ricostruzione sincrona
+                            }
+                        }
+                    }
+
+                    // 4. Aggiornamento entità e renderer
+                    scene.updateChunks();
                 }
-                scene.updateChunks();
             }
         }
     }

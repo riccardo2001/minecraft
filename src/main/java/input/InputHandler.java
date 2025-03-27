@@ -100,7 +100,6 @@ public class InputHandler {
             mouseInput.resetScroll();
         }
 
-        // Gestione selezione slot tramite tasti numerici
         for (int i = 0; i < 9; i++) {
             if (window.isKeyPressed(GLFW_KEY_1 + i)) {
                 scene.getPlayer().getInventory().selectSlot(i);
@@ -161,29 +160,11 @@ public class InputHandler {
         RayCast ray = scene.getRayCast();
         if (ray.hasHit() && ray.getHitDistance() <= 10.0f) {
             Vector3i blockPos = ray.getBlockPosition();
-            Block.Face hitFace = ray.getHitFace();
+            Vector3i adjacentPos = Block.calculateAdjacentPosition(blockPos, ray.getHitFace());
             
-            Vector3i adjacentPos = new Vector3i(blockPos);
-            
-            switch (hitFace) {
-                case FRONT:
-                    adjacentPos.z -= 1;
-                    break;
-                case BACK:
-                    adjacentPos.z += 1;
-                    break;
-                case RIGHT:
-                    adjacentPos.x += 1;
-                    break;
-                case LEFT:
-                    adjacentPos.x -= 1;
-                    break;
-                case TOP:
-                    adjacentPos.y += 1;
-                    break;
-                case BOTTOM:
-                    adjacentPos.y -= 1;
-                    break;
+            int zOffset = adjacentPos.z - blockPos.z;
+            if (zOffset != 0) {
+                adjacentPos.z = blockPos.z - zOffset; 
             }
             
             Block.BlockType selectedType = scene.getPlayer().getInventory().getSelectedBlock();
@@ -193,21 +174,10 @@ public class InputHandler {
 
                 scene.getWorld().setBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z, new Block(selectedType));
 
-                // Aggiornamento di tutti i chunk potenzialmente influenzati
-                int chunkX = Math.floorDiv(adjacentPos.x, Chunk.WIDTH);
-                int chunkZ = Math.floorDiv(adjacentPos.z, Chunk.DEPTH);
-                
-                // Aggiorna il chunk contenente il blocco e tutti i chunk adiacenti
-                // per evitare vuoti nel rendering
-                for (int dx = -1; dx <= 1; dx++) {
-                    for (int dz = -1; dz <= 1; dz++) {
-                        Chunk chunk = scene.getWorld().getChunk(chunkX + dx, chunkZ + dz);
-                        if (chunk != null) {
-                            chunk.setDirty(true);
-                        }
-                    }
+                Chunk chunk = scene.getWorld().getChunkContaining(adjacentPos.x, adjacentPos.z);
+                if (chunk != null) {
+                    chunk.setDirty(true);
                 }
-                
                 scene.updateChunks();
             }
         }

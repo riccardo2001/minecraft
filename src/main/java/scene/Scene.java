@@ -151,12 +151,13 @@ public class Scene {
     }
 
     public void updateChunks() {
-        List<Chunk> chunksToUpdate = new ArrayList<>(world.getLoadedChunks().values());
-        for (Chunk chunk : chunksToUpdate) {
-            if (chunk.isDirty()) {
-                chunk.rebuildFullMesh(world, this);
-            }
+        // Process only dirty chunks and clear their dirty state
+        Set<Chunk> dirtyChunks = world.getDirtyChunks();
+        for (Chunk chunk : dirtyChunks) {
+            chunk.rebuildFullMesh(world, this);
+            chunk.setDirty(false); // Clear dirty flag after rebuild
         }
+        dirtyChunks.clear();
     }
 
     public void registerChunkModel(String modelId, Mesh mesh) {

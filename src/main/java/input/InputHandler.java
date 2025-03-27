@@ -3,6 +3,7 @@ package input;
 import scene.Camera;
 import scene.RayCast;
 import scene.Scene;
+import world.World;
 import world.blocks.Block;
 import world.chunks.Chunk;
 
@@ -30,13 +31,14 @@ public class InputHandler {
 
         handleKeyboardInput(window, scene, diffTimeMillis, isPaused);
         handleMouseInput(window, scene, isPaused);
-        
+
         handleHotbarSelection(window, scene);
     }
-    
+
     private void handleKeyboardInput(Window window, Scene scene, float diffTimeMillis, boolean isPaused) {
-        if (isPaused) return;
-        
+        if (isPaused)
+            return;
+
         float move = diffTimeMillis * MOVEMENT_SPEED;
         Camera camera = scene.getCamera();
         Vector3f moveDir = new Vector3f();
@@ -65,27 +67,28 @@ public class InputHandler {
         if (window.isKeyPressed(GLFW_KEY_LEFT_SHIFT))
             camera.moveDown(move);
     }
-    
+
     private void handleMouseInput(Window window, Scene scene, boolean isPaused) {
-        if (isPaused) return;
-        
+        if (isPaused)
+            return;
+
         MouseInput mouseInput = window.getMouseInput();
         Vector2f displVec = mouseInput.getDisplVec();
         Camera camera = scene.getCamera();
-        
+
         camera.addRotation(
-            (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),
-            (float) Math.toRadians(displVec.y * MOUSE_SENSITIVITY));
-            
+                (float) Math.toRadians(displVec.x * MOUSE_SENSITIVITY),
+                (float) Math.toRadians(displVec.y * MOUSE_SENSITIVITY));
+
         if (mouseInput.isLeftButtonJustPressed()) {
             handleBlockDestruction(scene);
         }
-        
+
         if (mouseInput.isRightButtonJustPressed()) {
             handleBlockPlacement(scene);
         }
     }
-    
+
     private void handleHotbarSelection(Window window, Scene scene) {
         MouseInput mouseInput = window.getMouseInput();
         double scrollY = mouseInput.getScrollOffsetY();
@@ -106,7 +109,7 @@ public class InputHandler {
             }
         }
     }
-    
+
     private void handleBlockDestruction(Scene scene) {
         RayCast ray = scene.getRayCast();
         if (ray.hasHit()) {
@@ -117,20 +120,21 @@ public class InputHandler {
                 scene.getWorld().setBlock(blockPos.x, blockPos.y, blockPos.z, null);
                 scene.getPlayer().getInventory().addBlock(targetBlock.getType());
 
-                Set<Chunk> affectedChunks = new HashSet<>();
-
+                World world = scene.getWorld();
                 int chunkX = Math.floorDiv(blockPos.x, Chunk.WIDTH);
                 int chunkZ = Math.floorDiv(blockPos.z, Chunk.DEPTH);
 
-                for (int dx = -2; dx <= 2; dx++) {
-                    for (int dz = -2; dz <= 2; dz++) {
-                        Chunk chunk = scene.getWorld().getChunk(chunkX + dx, chunkZ + dz);
+                // Mark chunks in a 3x3 area around the affected chunk
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        Chunk chunk = world.getChunk(chunkX + dx, chunkZ + dz);
                         if (chunk != null) {
-                            affectedChunks.add(chunk);
+                            chunk.setDirty(true);
                         }
                     }
                 }
 
+                // Check adjacent blocks for cross-chunk changes
                 Vector3i[] directions = {
                         new Vector3i(1, 0, 0), new Vector3i(-1, 0, 0),
                         new Vector3i(0, 0, 1), new Vector3i(0, 0, -1),
@@ -139,34 +143,32 @@ public class InputHandler {
 
                 for (Vector3i dir : directions) {
                     Vector3i adjacentPos = new Vector3i(blockPos).add(dir);
-                    Chunk adjacentChunk = scene.getWorld().getChunkContaining(
-                            adjacentPos.x,
-                            adjacentPos.z);
-                    if (adjacentChunk != null) {
-                        affectedChunks.add(adjacentChunk);
+                    int adjChunkX = Math.floorDiv(adjacentPos.x, Chunk.WIDTH);
+                    int adjChunkZ = Math.floorDiv(adjacentPos.z, Chunk.DEPTH);
+                    if (adjChunkX != chunkX || adjChunkZ != chunkZ) {
+                        Chunk adjacentChunk = world.getChunk(adjChunkX, adjChunkZ);
+                        if (adjacentChunk != null) {
+                            adjacentChunk.setDirty(true);
+                        }
                     }
-                }
-
-                for (Chunk chunk : affectedChunks) {
-                    chunk.setDirty(true);
                 }
 
                 scene.updateChunks();
             }
         }
     }
-    
+
     private void handleBlockPlacement(Scene scene) {
         RayCast ray = scene.getRayCast();
         if (ray.hasHit() && ray.getHitDistance() <= 10.0f) {
             Vector3i blockPos = ray.getBlockPosition();
             Vector3i adjacentPos = Block.calculateAdjacentPosition(blockPos, ray.getHitFace());
-            
+
             int zOffset = adjacentPos.z - blockPos.z;
             if (zOffset != 0) {
-                adjacentPos.z = blockPos.z - zOffset; 
+                adjacentPos.z = blockPos.z - zOffset;
             }
-            
+
             Block.BlockType selectedType = scene.getPlayer().getInventory().getSelectedBlock();
 
             if (scene.getWorld().getBlock(adjacentPos.x, adjacentPos.y, adjacentPos.z) == null &&

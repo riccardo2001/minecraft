@@ -2,8 +2,10 @@ package world;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
@@ -18,6 +20,7 @@ import world.events.WorldEvent.ChunkUnloadEvent;
 public class World {
     private Map<ChunkPosition, Chunk> loadedChunks;
     private List<Consumer<WorldEvent>> eventListeners;
+    private static Set<Chunk> dirtyChunks = new HashSet<>();
     private int renderDistance = 8;
 
     public World() {
@@ -146,5 +149,17 @@ public class World {
             loadedChunks.remove(pos);
             fireEvent(new ChunkUnloadEvent(pos));
         }
+    }
+
+    public void setDirty(Chunk chunk) {
+        dirtyChunks.add(chunk);
+    }
+
+    public Set<Chunk> getDirtyChunks() {
+        return dirtyChunks;
+    }
+
+    public static void markChunkDirty(Chunk chunk) {
+        dirtyChunks.add(chunk);
     }
 }

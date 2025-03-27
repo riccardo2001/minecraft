@@ -145,7 +145,7 @@ public class HUD {
     }
 
     private void renderQuad(int x, int y, int width, int height, Vector4f color) {
-        glBindTexture(GL_TEXTURE_2D, 0);
+        glActiveTexture(GL_TEXTURE0);
         uniformsMap.setUniform("color", color);
         uniformsMap.setUniform("texAtlasCoords", new Vector4f(0, 0, 0, 0));
 

@@ -2,6 +2,7 @@ package scene;
 
 import org.joml.Vector3f;
 import org.joml.Vector4f;
+import org.lwjgl.glfw.GLFW;
 
 import rendering.meshes.Mesh;
 import rendering.meshes.Model;
@@ -15,6 +16,9 @@ import world.blocks.Block;
 import world.blocks.Block.BlockType;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 public class Scene {
     private static TextureCacheAtlas textureCacheAtlas;
@@ -30,6 +34,9 @@ public class Scene {
     private int currentCenterChunkX = Integer.MIN_VALUE;
     private int currentCenterChunkZ = Integer.MIN_VALUE;
     private static final int MAX_MESH_UPDATES_PER_FRAME = 2;
+
+    private ExecutorService chunkExecutor = Executors.newFixedThreadPool(4);
+    private volatile boolean isUpdatingChunks = false;
 
     static {
         modelMap = new HashMap<>();
@@ -104,50 +111,66 @@ public class Scene {
     }
 
     public void updateWorldGeneration(float playerX, float playerZ) {
+        if (isUpdatingChunks)
+            return;
+
         int newCenterChunkX = (int) Math.floor(playerX / (Chunk.WIDTH * Block.BLOCK_SIZE));
         int newCenterChunkZ = (int) Math.floor(playerZ / (Chunk.DEPTH * Block.BLOCK_SIZE));
 
         if (newCenterChunkX == currentCenterChunkX && newCenterChunkZ == currentCenterChunkZ) {
             return;
         }
+
+        isUpdatingChunks = true;
         currentCenterChunkX = newCenterChunkX;
         currentCenterChunkZ = newCenterChunkZ;
 
-        Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
         int renderDistance = world.getRenderDistance();
+        Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
 
-        Set<ChunkPosition> chunksToRemove = new HashSet<>();
-        for (Map.Entry<ChunkPosition, Chunk> entry : loadedChunks.entrySet()) {
-            ChunkPosition chunkPos = entry.getKey();
-            int chunkDistanceX = Math.abs(chunkPos.getX() - currentCenterChunkX);
-            int chunkDistanceZ = Math.abs(chunkPos.getZ() - currentCenterChunkZ);
-            if (chunkDistanceX > renderDistance || chunkDistanceZ > renderDistance) {
-                chunksToRemove.add(chunkPos);
-            }
-        }
+        Vector3f moveDir = getCamera().getFrontVector();
+        int priorityX = moveDir.x != 0 ? (int) Math.signum(moveDir.x) : 0;
+        int priorityZ = moveDir.z != 0 ? (int) Math.signum(moveDir.z) : 0;
 
-        for (ChunkPosition posToRemove : chunksToRemove) {
-            Chunk chunkToRemove = loadedChunks.get(posToRemove);
-            if (chunkToRemove != null) {
-                cleanupChunk(chunkToRemove);
-            }
-            loadedChunks.remove(posToRemove);
-        }
+        List<ChunkPosition> chunksToLoad = new ArrayList<>();
 
-        for (int dx = -renderDistance; dx <= renderDistance; dx++) {
-            for (int dz = -renderDistance; dz <= renderDistance; dz++) {
-                int chunkX = currentCenterChunkX + dx;
-                int chunkZ = currentCenterChunkZ + dz;
-                ChunkPosition chunkPos = new ChunkPosition(chunkX, chunkZ);
-                if (!loadedChunks.containsKey(chunkPos)) {
-                    Chunk chunk = new Chunk(chunkX, chunkZ, world);
-                    loadedChunks.put(chunkPos, chunk);
+        Set<ChunkPosition> chunksToRemove = loadedChunks.keySet().stream()
+                .filter(pos -> Math.abs(pos.getX() - currentCenterChunkX) > renderDistance ||
+                        Math.abs(pos.getZ() - currentCenterChunkZ) > renderDistance)
+                .collect(Collectors.toSet());
 
-                    chunk.buildMesh(world, this);
+        chunksToRemove.forEach(pos -> {
+            cleanupChunk(loadedChunks.get(pos));
+            loadedChunks.remove(pos);
+        });
+
+        for (int i = 0; i <= renderDistance * 2; i++) {
+            for (int j = -i; j <= i; j++) {
+                int dx = priorityX != 0 ? j * priorityX : j;
+                int dz = priorityZ != 0 ? (i - Math.abs(j)) * priorityZ : (i - Math.abs(j));
+
+                addChunkToLoad(chunksToLoad, currentCenterChunkX + dx, currentCenterChunkZ + dz);
+                if (priorityX != 0 && priorityZ != 0) {
+                    addChunkToLoad(chunksToLoad, currentCenterChunkX - dx, currentCenterChunkZ + dz);
                 }
             }
         }
 
+        chunksToLoad.parallelStream().forEach(chunkPos -> {
+            if (!loadedChunks.containsKey(chunkPos)) {
+                Chunk chunk = new Chunk(chunkPos.getX(), chunkPos.getZ(), world);
+
+                chunkExecutor.submit(() -> {
+                    GLFW.glfwPostEmptyEvent();
+                    synchronized (loadedChunks) {
+                        loadedChunks.put(chunkPos, chunk);
+                        chunk.setDirty(true);
+                    }
+                });
+            }
+        });
+
+        isUpdatingChunks = false;
     }
 
     public void updateChunks() {
@@ -194,9 +217,19 @@ public class Scene {
         }
     }
 
+    private void addChunkToLoad(List<ChunkPosition> list, int x, int z) {
+        ChunkPosition pos = new ChunkPosition(x, z);
+        if (!list.contains(pos) &&
+                Math.abs(x - currentCenterChunkX) <= world.getRenderDistance() &&
+                Math.abs(z - currentCenterChunkZ) <= world.getRenderDistance()) {
+            list.add(pos);
+        }
+    }
+
     public void cleanup() {
         modelMap.clear();
         entityMap.clear();
+        chunkExecutor.shutdownNow();
     }
 
     public void cleanupChunk(Chunk chunk) {

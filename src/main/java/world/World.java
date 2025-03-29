@@ -1,11 +1,10 @@
 package world;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
@@ -20,11 +19,11 @@ import world.events.WorldEvent.ChunkUnloadEvent;
 public class World {
     private Map<ChunkPosition, Chunk> loadedChunks;
     private List<Consumer<WorldEvent>> eventListeners;
-    private static Set<Chunk> dirtyChunks = new HashSet<>();
-    private int renderDistance = 8;
+    private static final Set<Chunk> dirtyChunks = ConcurrentHashMap.newKeySet();
+    private static final int renderDistance = 8;
 
     public World() {
-        this.loadedChunks = new HashMap<>();
+        this.loadedChunks = new ConcurrentHashMap<>();
         this.eventListeners = new CopyOnWriteArrayList<>();
     }
     
@@ -116,19 +115,6 @@ public class World {
         return chunks;
     }
 
-    public Map<ChunkPosition, Chunk> getLoadedChunks() {
-        return loadedChunks;
-    }
-
-    public Chunk getChunk(int chunkX, int chunkZ) {
-        ChunkPosition position = new ChunkPosition(chunkX, chunkZ);
-        return loadedChunks.get(position);
-    }
-
-    public int getRenderDistance() {
-        return renderDistance;
-    }
-
     public void unloadDistantChunks(float centerX, float centerZ) {
         int centerChunkX = (int) Math.floor(centerX / (Chunk.WIDTH * Block.BLOCK_SIZE));
         int centerChunkZ = (int) Math.floor(centerZ / (Chunk.DEPTH * Block.BLOCK_SIZE));
@@ -162,4 +148,18 @@ public class World {
     public static void markChunkDirty(Chunk chunk) {
         dirtyChunks.add(chunk);
     }
+
+    public Map<ChunkPosition, Chunk> getLoadedChunks() {
+        return loadedChunks;
+    }
+
+    public Chunk getChunk(int chunkX, int chunkZ) {
+        ChunkPosition position = new ChunkPosition(chunkX, chunkZ);
+        return loadedChunks.get(position);
+    }
+
+    public int getRenderDistance() {
+        return renderDistance;
+    }
+
 }

@@ -16,9 +16,10 @@ import world.blocks.Block;
 import world.blocks.Block.BlockType;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Scene {
     private static TextureCacheAtlas textureCacheAtlas;
@@ -33,10 +34,18 @@ public class Scene {
 
     private int currentCenterChunkX = Integer.MIN_VALUE;
     private int currentCenterChunkZ = Integer.MIN_VALUE;
-    private static final int MAX_MESH_UPDATES_PER_FRAME = 2;
+    private static final Object chunkLock = new Object();
 
-    private ExecutorService chunkExecutor = Executors.newFixedThreadPool(4);
-    private volatile boolean isUpdatingChunks = false;
+    private ExecutorService chunkGenerationExecutor;
+    private AtomicBoolean isUpdatingChunks = new AtomicBoolean(false);
+
+    private final Queue<Chunk> meshGenerationQueue = new ConcurrentLinkedQueue<>();
+
+    private static final int MAX_MESH_UPDATES_PER_FRAME = 64;
+    private static final int BUFFER_DISTANCE = 64;
+
+    private Vector3f lastPlayerPosition = new Vector3f(0, 0, 0);
+    private Vector3f playerMoveDirection = new Vector3f(0, 0, 0);
 
     static {
         modelMap = new HashMap<>();
@@ -50,6 +59,16 @@ public class Scene {
         rayCast = new RayCast();
         world = new World();
         textureCacheAtlas = new TextureCacheAtlas("textures/atlas2.png", 512, 512, 16);
+
+        int processors = Runtime.getRuntime().availableProcessors();
+        chunkGenerationExecutor = Executors.newFixedThreadPool(processors / 2);
+
+        Logger.info("Sistema multithreading inizializzato con " + processors / 2 + " thread disponibili.");
+
+        currentCenterChunkX = (int) Math.floor(0 / (Chunk.WIDTH * Block.BLOCK_SIZE));
+        currentCenterChunkZ = (int) Math.floor(0 / (Chunk.DEPTH * Block.BLOCK_SIZE));
+
+        lastPlayerPosition.set(0, 0, 0);
     }
 
     public static void addEntity(Entity entity) {
@@ -111,77 +130,212 @@ public class Scene {
     }
 
     public void updateWorldGeneration(float playerX, float playerZ) {
-        if (isUpdatingChunks)
-            return;
-
-        int newCenterChunkX = (int) Math.floor(playerX / (Chunk.WIDTH * Block.BLOCK_SIZE));
-        int newCenterChunkZ = (int) Math.floor(playerZ / (Chunk.DEPTH * Block.BLOCK_SIZE));
-
-        if (newCenterChunkX == currentCenterChunkX && newCenterChunkZ == currentCenterChunkZ) {
+        if (isUpdatingChunks.getAndSet(true)) {
             return;
         }
 
-        isUpdatingChunks = true;
-        currentCenterChunkX = newCenterChunkX;
-        currentCenterChunkZ = newCenterChunkZ;
+        try {
+            Vector3f currentPos = new Vector3f(playerX, 0, playerZ);
+            if (!lastPlayerPosition.equals(0, 0, 0)) {
+                playerMoveDirection.set(currentPos).sub(lastPlayerPosition).normalize();
+            }
+            lastPlayerPosition.set(currentPos);
 
-        int renderDistance = world.getRenderDistance();
-        Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
+            int newCenterChunkX = (int) Math.floor(playerX / (Chunk.WIDTH * Block.BLOCK_SIZE));
+            int newCenterChunkZ = (int) Math.floor(playerZ / (Chunk.DEPTH * Block.BLOCK_SIZE));
 
-        Vector3f moveDir = getCamera().getFrontVector();
-        int priorityX = moveDir.x != 0 ? (int) Math.signum(moveDir.x) : 0;
-        int priorityZ = moveDir.z != 0 ? (int) Math.signum(moveDir.z) : 0;
+            if (newCenterChunkX == currentCenterChunkX && newCenterChunkZ == currentCenterChunkZ) {
+                isUpdatingChunks.set(false);
+                return;
+            }
 
-        List<ChunkPosition> chunksToLoad = new ArrayList<>();
+            currentCenterChunkX = newCenterChunkX;
+            currentCenterChunkZ = newCenterChunkZ;
 
-        Set<ChunkPosition> chunksToRemove = loadedChunks.keySet().stream()
-                .filter(pos -> Math.abs(pos.getX() - currentCenterChunkX) > renderDistance ||
-                        Math.abs(pos.getZ() - currentCenterChunkZ) > renderDistance)
-                .collect(Collectors.toSet());
+            Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
+            int renderDistance = world.getRenderDistance();
+            int totalDistance = renderDistance + BUFFER_DISTANCE;
 
-        chunksToRemove.forEach(pos -> {
-            cleanupChunk(loadedChunks.get(pos));
-            loadedChunks.remove(pos);
-        });
-
-        for (int i = 0; i <= renderDistance * 2; i++) {
-            for (int j = -i; j <= i; j++) {
-                int dx = priorityX != 0 ? j * priorityX : j;
-                int dz = priorityZ != 0 ? (i - Math.abs(j)) * priorityZ : (i - Math.abs(j));
-
-                addChunkToLoad(chunksToLoad, currentCenterChunkX + dx, currentCenterChunkZ + dz);
-                if (priorityX != 0 && priorityZ != 0) {
-                    addChunkToLoad(chunksToLoad, currentCenterChunkX - dx, currentCenterChunkZ + dz);
+            Set<ChunkPosition> chunksToRemove = new HashSet<>();
+            synchronized (chunkLock) {
+                for (Map.Entry<ChunkPosition, Chunk> entry : loadedChunks.entrySet()) {
+                    ChunkPosition chunkPos = entry.getKey();
+                    int chunkDistanceX = Math.abs(chunkPos.getX() - currentCenterChunkX);
+                    int chunkDistanceZ = Math.abs(chunkPos.getZ() - currentCenterChunkZ);
+                    if (chunkDistanceX > totalDistance + 1 || chunkDistanceZ > totalDistance + 1) {
+                        chunksToRemove.add(chunkPos);
+                    }
                 }
             }
-        }
 
-        chunksToLoad.parallelStream().forEach(chunkPos -> {
-            if (!loadedChunks.containsKey(chunkPos)) {
-                Chunk chunk = new Chunk(chunkPos.getX(), chunkPos.getZ(), world);
-
-                chunkExecutor.submit(() -> {
-                    GLFW.glfwPostEmptyEvent();
-                    synchronized (loadedChunks) {
-                        loadedChunks.put(chunkPos, chunk);
-                        chunk.setDirty(true);
+            if (!chunksToRemove.isEmpty()) {
+                for (ChunkPosition posToRemove : chunksToRemove) {
+                    synchronized (chunkLock) {
+                        Chunk chunkToRemove = loadedChunks.get(posToRemove);
+                        if (chunkToRemove != null) {
+                            cleanupChunk(chunkToRemove);
+                            loadedChunks.remove(posToRemove);
+                            if (loadedChunks.containsKey(posToRemove)) {
+                                loadedChunks.remove(posToRemove);
+                            }
+                        }
                     }
-                });
+                }
             }
-        });
 
-        isUpdatingChunks = false;
+            List<ChunkPosition> chunksToLoad = new ArrayList<>();
+
+            int lookAheadX = 0;
+            int lookAheadZ = 0;
+
+            if (Math.abs(playerMoveDirection.x) > 0.3f) {
+                lookAheadX = playerMoveDirection.x > 0 ? 2 : -2;
+            }
+
+            if (Math.abs(playerMoveDirection.z) > 0.3f) {
+                lookAheadZ = playerMoveDirection.z > 0 ? 2 : -2;
+            }
+
+            for (int dx = -totalDistance; dx <= totalDistance; dx++) {
+                for (int dz = -totalDistance; dz <= totalDistance; dz++) {
+                    int chunkX = currentCenterChunkX + dx;
+                    int chunkZ = currentCenterChunkZ + dz;
+                    ChunkPosition chunkPos = new ChunkPosition(chunkX, chunkZ);
+
+                    synchronized (chunkLock) {
+                        Chunk existingChunk = loadedChunks.get(chunkPos);
+                        if (existingChunk == null) {
+                            chunksToLoad.add(chunkPos);
+                        } else if (existingChunk.getChunkEntity() == null) {
+                            cleanupChunk(existingChunk);
+                            loadedChunks.remove(chunkPos);
+                            chunksToLoad.add(chunkPos);
+                        }
+                    }
+                }
+            }
+
+            for (int i = 1; i <= 3; i++) {
+                int aheadX = currentCenterChunkX + (lookAheadX * i);
+                int aheadZ = currentCenterChunkZ + (lookAheadZ * i);
+
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dz = -1; dz <= 1; dz++) {
+                        ChunkPosition pos = new ChunkPosition(aheadX + dx, aheadZ + dz);
+                        if (!loadedChunks.containsKey(pos) && !chunksToLoad.contains(pos)) {
+                            chunksToLoad.add(pos);
+                        }
+                    }
+                }
+            }
+
+            if (!chunksToLoad.isEmpty()) {
+                // In updateWorldGeneration, modifica l'ordinamento:
+                chunksToLoad.sort((pos1, pos2) -> {
+                    int dx1 = pos1.getX() - currentCenterChunkX;
+                    int dz1 = pos1.getZ() - currentCenterChunkZ;
+                    int dx2 = pos2.getX() - currentCenterChunkX;
+                    int dz2 = pos2.getZ() - currentCenterChunkZ;
+
+                    // Priorità basata sulla distanza Manhattan
+                    return Integer.compare((Math.abs(dx1) + Math.abs(dz1)),
+                            (Math.abs(dx2) + Math.abs(dz2)));
+                });
+
+                int immediateCount = Math.min(4, chunksToLoad.size());
+                for (int i = 0; i < immediateCount; i++) {
+                    ChunkPosition pos = chunksToLoad.get(i);
+                    Chunk chunk = new Chunk(pos.getX(), pos.getZ(), world);
+                    synchronized (chunkLock) {
+                        loadedChunks.put(pos, chunk);
+                    }
+                    meshGenerationQueue.add(chunk);
+                }
+                chunksToLoad.subList(0, immediateCount).clear();
+
+                if (!chunksToLoad.isEmpty()) {
+                    final int MAX_CONCURRENT_LOADING = world.getRenderDistance();
+                    final List<ChunkPosition> currentBatch = chunksToLoad.subList(0,
+                            Math.min(MAX_CONCURRENT_LOADING, chunksToLoad.size()));
+
+                    for (ChunkPosition pos : currentBatch) {
+                        final int chunkX = pos.getX();
+                        final int chunkZ = pos.getZ();
+
+                        chunkGenerationExecutor.submit(() -> {
+                            try {
+                                Chunk chunk = new Chunk(chunkX, chunkZ, world);
+
+                                synchronized (chunkLock) {
+                                    loadedChunks.put(new ChunkPosition(chunkX, chunkZ), chunk);
+                                }
+
+                                meshGenerationQueue.add(chunk);
+                                GLFW.glfwPostEmptyEvent();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        });
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            isUpdatingChunks.set(false);
+        }
     }
 
     public void updateChunks() {
-        Set<Chunk> dirtyChunks = world.getDirtyChunks();
-        Iterator<Chunk> it = dirtyChunks.iterator();
-        int processed = 0;
+        try {
+            int totalProcessed = 0;
 
-        while (it.hasNext() && processed++ < MAX_MESH_UPDATES_PER_FRAME) {
-            Chunk chunk = it.next();
-            chunk.rebuildFullMesh(world, this);
-            it.remove();
+            int maxNewChunks = (int) (MAX_MESH_UPDATES_PER_FRAME * 0.7);
+            int processedNewChunks = 0;
+
+            while (!meshGenerationQueue.isEmpty() && processedNewChunks < maxNewChunks) {
+                Chunk chunk = meshGenerationQueue.poll();
+                if (chunk != null) {
+                    try {
+                        chunk.buildMesh(world, this);
+                        processedNewChunks++;
+                        totalProcessed++;
+                    } catch (Exception e) {
+                        Logger.error("Errore durante buildMesh: " + e.getMessage());
+                    }
+                }
+            }
+
+            Set<Chunk> dirtyChunks = world.getDirtyChunks();
+            if (!dirtyChunks.isEmpty()) {
+                Iterator<Chunk> it = dirtyChunks.iterator();
+                int maxDirtyChunks = MAX_MESH_UPDATES_PER_FRAME - processedNewChunks;
+                int processedDirty = 0;
+
+                while (it.hasNext() && processedDirty < maxDirtyChunks) {
+                    Chunk chunk = it.next();
+                    try {
+                        chunk.rebuildFullMesh(world, this);
+                        processedDirty++;
+                        totalProcessed++;
+                    } catch (Exception e) {
+                        Logger.error("Errore durante rebuild mesh: " + e.getMessage());
+                    } finally {
+                        it.remove();
+                    }
+                }
+            }
+
+            if (totalProcessed > 0) {
+                Logger.debug("Processati in totale " + totalProcessed + " chunk mesh (nuovi: " +
+                        processedNewChunks + ", ricostruiti: " + (totalProcessed - processedNewChunks) + ")");
+            }
+
+            if (!meshGenerationQueue.isEmpty() || !world.getDirtyChunks().isEmpty()) {
+                GLFW.glfwPostEmptyEvent();
+            }
+        } catch (Exception e) {
+            Logger.error("Errore in updateChunks: " + e.getMessage());
         }
     }
 
@@ -217,25 +371,220 @@ public class Scene {
         }
     }
 
-    private void addChunkToLoad(List<ChunkPosition> list, int x, int z) {
-        ChunkPosition pos = new ChunkPosition(x, z);
-        if (!list.contains(pos) &&
-                Math.abs(x - currentCenterChunkX) <= world.getRenderDistance() &&
-                Math.abs(z - currentCenterChunkZ) <= world.getRenderDistance()) {
-            list.add(pos);
-        }
-    }
-
     public void cleanup() {
         modelMap.clear();
         entityMap.clear();
-        chunkExecutor.shutdownNow();
+
+        if (chunkGenerationExecutor != null) {
+            chunkGenerationExecutor.shutdown();
+        }
     }
 
     public void cleanupChunk(Chunk chunk) {
-        Entity chunkEntity = chunk.getChunkEntity();
-        if (chunkEntity != null) {
-            removeEntity(chunkEntity.getId());
+        if (chunk == null)
+            return;
+
+        try {
+            int chunkX = chunk.getChunkX();
+            int chunkZ = chunk.getChunkZ();
+            String entityId = "chunk_" + chunkX + "_" + chunkZ;
+            String modelId = "chunk_model_" + chunkX + "_" + chunkZ;
+
+            Entity chunkEntity = chunk.getChunkEntity();
+            if (chunkEntity != null) {
+                entityMap.remove(entityId);
+
+                Model model = modelMap.get(modelId);
+                if (model != null) {
+                    var list = model.getEntitiesList();
+                    list.remove(chunkEntity);
+                }
+
+                chunk.setChunkEntity(null);
+            } else {
+                Entity orphanEntity = entityMap.get(entityId);
+                if (orphanEntity != null) {
+                    Logger.info("Trovata entità orfana: " + entityId);
+                    entityMap.remove(entityId);
+                }
+            }
+
+            Model chunkModel = modelMap.get(modelId);
+            if (chunkModel != null) {
+                for (Mesh mesh : chunkModel.getMeshList()) {
+                    if (mesh != null) {
+                        mesh.cleanup();
+                    }
+                }
+                modelMap.remove(modelId);
+            }
+
+            meshGenerationQueue.remove(chunk);
+
+            world.getDirtyChunks().remove(chunk);
+
+            chunk.releaseResources();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void forceReloadChunk(int chunkX, int chunkZ) {
+        ChunkPosition pos = new ChunkPosition(chunkX, chunkZ);
+        Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
+
+        Logger.info("Forzatura ricaricamento chunk in posizione (" + chunkX + "," + chunkZ + ")");
+
+        synchronized (chunkLock) {
+            Chunk existingChunk = loadedChunks.get(pos);
+            if (existingChunk != null) {
+                cleanupChunk(existingChunk);
+                loadedChunks.remove(pos);
+            }
+
+            String entityId = "chunk_" + chunkX + "_" + chunkZ;
+            String modelId = "chunk_model_" + chunkX + "_" + chunkZ;
+
+            if (entityMap.containsKey(entityId)) {
+                Logger.info("Rimozione entità fantasma: " + entityId);
+                removeEntity(entityId);
+            }
+
+            if (modelMap.containsKey(modelId)) {
+                Logger.info("Rimozione modello fantasma: " + modelId);
+                Model phantom = modelMap.remove(modelId);
+                if (phantom != null) {
+                    for (Mesh mesh : phantom.getMeshList()) {
+                        if (mesh != null)
+                            mesh.cleanup();
+                    }
+                }
+            }
+
+            Chunk newChunk = new Chunk(chunkX, chunkZ, world);
+            loadedChunks.put(pos, newChunk);
+
+            newChunk.buildMesh(world, this);
+        }
+    }
+
+    public void validateAllChunks() {
+        Logger.info("Validazione di tutti i chunk caricati...");
+        Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
+        List<ChunkPosition> ghostChunks = new ArrayList<>();
+        List<ChunkPosition> missingChunks = new ArrayList<>();
+
+        int renderDistance = world.getRenderDistance();
+
+        synchronized (chunkLock) {
+            for (Map.Entry<ChunkPosition, Chunk> entry : loadedChunks.entrySet()) {
+                ChunkPosition pos = entry.getKey();
+                Chunk chunk = entry.getValue();
+
+                if (chunk.getChunkEntity() == null) {
+                    ghostChunks.add(pos);
+                } else {
+                    String entityId = chunk.getChunkEntity().getId();
+                    if (!entityMap.containsKey(entityId)) {
+                        ghostChunks.add(pos);
+                    }
+                }
+            }
+
+            for (int dx = -renderDistance; dx <= renderDistance; dx++) {
+                for (int dz = -renderDistance; dz <= renderDistance; dz++) {
+                    ChunkPosition pos = new ChunkPosition(currentCenterChunkX + dx, currentCenterChunkZ + dz);
+                    if (!loadedChunks.containsKey(pos)) {
+                        missingChunks.add(pos);
+                    }
+                }
+            }
+
+            if (!ghostChunks.isEmpty()) {
+                for (ChunkPosition pos : ghostChunks) {
+                    forceReloadChunk(pos.getX(), pos.getZ());
+                }
+            }
+
+            if (!missingChunks.isEmpty()) {
+                for (ChunkPosition pos : missingChunks) {
+                    Chunk newChunk = new Chunk(pos.getX(), pos.getZ(), world);
+                    loadedChunks.put(pos, newChunk);
+                    meshGenerationQueue.add(newChunk);
+                }
+            }
+        }
+    }
+
+    public void resetAllChunks() {
+        Logger.info("RESET COMPLETO DEI CHUNK IN CORSO...");
+
+        synchronized (chunkLock) {
+            Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
+            Set<ChunkPosition> positions = new HashSet<>(loadedChunks.keySet());
+
+            for (ChunkPosition pos : positions) {
+                Chunk chunk = loadedChunks.get(pos);
+                cleanupChunk(chunk);
+                loadedChunks.remove(pos);
+            }
+
+            meshGenerationQueue.clear();
+            world.getDirtyChunks().clear();
+
+            int renderDistance = world.getRenderDistance();
+            List<ChunkPosition> chunksToReload = new ArrayList<>();
+
+            for (int dx = -renderDistance; dx <= renderDistance; dx++) {
+                for (int dz = -renderDistance; dz <= renderDistance; dz++) {
+                    int chunkX = currentCenterChunkX + dx;
+                    int chunkZ = currentCenterChunkZ + dz;
+                    chunksToReload.add(new ChunkPosition(chunkX, chunkZ));
+                }
+            }
+
+            chunksToReload.sort((p1, p2) -> {
+                double dist1 = Math.sqrt(Math.pow(p1.getX() - currentCenterChunkX, 2) +
+                        Math.pow(p1.getZ() - currentCenterChunkZ, 2));
+                double dist2 = Math.sqrt(Math.pow(p2.getX() - currentCenterChunkX, 2) +
+                        Math.pow(p2.getZ() - currentCenterChunkZ, 2));
+                return Double.compare(dist1, dist2);
+            });
+
+            for (int i = 0; i < Math.min(9, chunksToReload.size()); i++) {
+                ChunkPosition pos = chunksToReload.get(i);
+                Chunk chunk = new Chunk(pos.getX(), pos.getZ(), world);
+                loadedChunks.put(pos, chunk);
+                chunk.buildMesh(world, this);
+            }
+
+            for (int i = 9; i < chunksToReload.size(); i++) {
+                ChunkPosition pos = chunksToReload.get(i);
+                meshGenerationQueue.add(new Chunk(pos.getX(), pos.getZ(), world));
+            }
+        }
+    }
+
+    public void forceInitialChunksGeneration() {
+        Logger.info("Generazione forzata dei chunk iniziali");
+
+        int renderDistance = world.getRenderDistance();
+        Map<ChunkPosition, Chunk> loadedChunks = world.getLoadedChunks();
+
+        // Genera i chunk centrali in modo sincrono
+        for (int dx = -renderDistance; dx <= renderDistance; dx++) {
+            for (int dz = -renderDistance; dz <= renderDistance; dz++) {
+                int chunkX = currentCenterChunkX + dx;
+                int chunkZ = currentCenterChunkZ + dz;
+                ChunkPosition pos = new ChunkPosition(chunkX, chunkZ);
+
+                if (!loadedChunks.containsKey(pos)) {
+                    Chunk chunk = new Chunk(chunkX, chunkZ, world);
+                    loadedChunks.put(pos, chunk);
+                    chunk.buildMesh(world, this); // Genera mesh immediatamente
+                }
+            }
         }
     }
 
@@ -334,4 +683,5 @@ public class Scene {
                     (block != null ? block.getType() : "null"));
         }
     }
+
 }

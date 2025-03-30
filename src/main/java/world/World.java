@@ -1,6 +1,5 @@
 package world;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -14,7 +13,6 @@ import world.chunks.ChunkPosition;
 import world.events.WorldEvent;
 import world.events.WorldEvent.BlockChangeEvent;
 import world.events.WorldEvent.ChunkLoadEvent;
-import world.events.WorldEvent.ChunkUnloadEvent;
 
 public class World {
     private Map<ChunkPosition, Chunk> loadedChunks;
@@ -89,51 +87,6 @@ public class World {
             chunk.setBlock(localX, y, localZ, block);
             
             fireEvent(new BlockChangeEvent(x, y, z, oldBlock, block));
-        }
-    }
-
-    public Chunk getChunkContaining(int blockX, int blockZ) {
-        int chunkX = Math.floorDiv(blockX, Chunk.WIDTH);
-        int chunkZ = Math.floorDiv(blockZ, Chunk.DEPTH);
-        return loadedChunks.get(new ChunkPosition(chunkX, chunkZ));
-    }
-
-    public List<Chunk> getAdjacentChunks(int worldX, int worldZ) {
-        List<Chunk> chunks = new ArrayList<>();
-
-        int chunkX = Math.floorDiv(worldX, Chunk.WIDTH);
-        int chunkZ = Math.floorDiv(worldZ, Chunk.DEPTH);
-
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                Chunk chunk = getChunk(chunkX + dx, chunkZ + dz);
-                if (chunk != null) {
-                    chunks.add(chunk);
-                }
-            }
-        }
-        return chunks;
-    }
-
-    public void unloadDistantChunks(float centerX, float centerZ) {
-        int centerChunkX = (int) Math.floor(centerX / (Chunk.WIDTH * Block.BLOCK_SIZE));
-        int centerChunkZ = (int) Math.floor(centerZ / (Chunk.DEPTH * Block.BLOCK_SIZE));
-        
-        List<ChunkPosition> chunksToUnload = new ArrayList<>();
-        
-        for (ChunkPosition pos : loadedChunks.keySet()) {
-            int dx = pos.getX() - centerChunkX;
-            int dz = pos.getZ() - centerChunkZ;
-            int distanceSquared = dx * dx + dz * dz;
-            
-            if (distanceSquared > renderDistance * renderDistance) {
-                chunksToUnload.add(pos);
-            }
-        }
-        
-        for (ChunkPosition pos : chunksToUnload) {
-            loadedChunks.remove(pos);
-            fireEvent(new ChunkUnloadEvent(pos));
         }
     }
 

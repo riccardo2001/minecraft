@@ -261,4 +261,12 @@ public class ChunkMesh {
     private Vector4f getTextureRegion(Block.BlockType blockType, Block.Face face) {
         return Scene.getBlockTextureRegion(blockType, face);
     }
+
+
+    public void cleanup() {
+        if (mesh != null) {
+            mesh.cleanup();
+            mesh = null;
+        }
+    }
 }

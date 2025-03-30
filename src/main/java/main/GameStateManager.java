@@ -1,6 +1,5 @@
 package main;
 
-import core.Window;
 import rendering.Render;
 import scene.Scene;
 
@@ -16,10 +15,8 @@ public class GameStateManager {
     private GameState currentState;
     private final Scene scene;
     private final Render render;
-    private final Window window;
     
-    public GameStateManager(Window window, Scene scene, Render render) {
-        this.window = window;
+    public GameStateManager(Scene scene, Render render) {
         this.scene = scene;
         this.render = render;
         this.currentState = GameState.PLAYING;

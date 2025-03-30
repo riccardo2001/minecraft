@@ -65,6 +65,12 @@ public class InputHandler {
             camera.moveUp(move);
         if (window.isKeyPressed(GLFW_KEY_LEFT_SHIFT))
             camera.moveDown(move);
+
+        Vector3f position = camera.getPosition();
+
+        scene.getPlayer().update(scene.getWorld(), position, diffTimeMillis);
+
+        camera.setPosition(position.x, position.y, position.z);
     }
 
     private void handleMouseInput(Window window, Scene scene, boolean isPaused) {
@@ -121,35 +127,35 @@ public class InputHandler {
 
                 int chunkX = Math.floorDiv(blockPos.x, Chunk.WIDTH);
                 int chunkZ = Math.floorDiv(blockPos.z, Chunk.DEPTH);
-                
+
                 boolean isOnBorderX = blockPos.x % Chunk.WIDTH == 0 || blockPos.x % Chunk.WIDTH == Chunk.WIDTH - 1;
                 boolean isOnBorderZ = blockPos.z % Chunk.DEPTH == 0 || blockPos.z % Chunk.DEPTH == Chunk.DEPTH - 1;
-                
+
                 List<Chunk> chunksToUpdate = new ArrayList<>();
-                
+
                 Chunk mainChunk = scene.getWorld().getChunk(chunkX, chunkZ);
                 if (mainChunk != null) {
                     chunksToUpdate.add(mainChunk);
                 }
-                
+
                 if (isOnBorderX || isOnBorderZ) {
                     int borderX = isOnBorderX ? (blockPos.x % Chunk.WIDTH == 0 ? -1 : 1) : 0;
                     int borderZ = isOnBorderZ ? (blockPos.z % Chunk.DEPTH == 0 ? -1 : 1) : 0;
-                    
+
                     if (isOnBorderX) {
                         Chunk adjacentX = scene.getWorld().getChunk(chunkX + borderX, chunkZ);
                         if (adjacentX != null) {
                             chunksToUpdate.add(adjacentX);
                         }
                     }
-                    
+
                     if (isOnBorderZ) {
                         Chunk adjacentZ = scene.getWorld().getChunk(chunkX, chunkZ + borderZ);
                         if (adjacentZ != null) {
                             chunksToUpdate.add(adjacentZ);
                         }
                     }
-                    
+
                     if (isOnBorderX && isOnBorderZ) {
                         Chunk diagonalChunk = scene.getWorld().getChunk(chunkX + borderX, chunkZ + borderZ);
                         if (diagonalChunk != null) {
@@ -157,11 +163,11 @@ public class InputHandler {
                         }
                     }
                 }
-                
+
                 for (Chunk chunk : chunksToUpdate) {
                     chunk.rebuildFullMesh(scene.getWorld(), scene);
                 }
-                
+
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dz = -1; dz <= 1; dz++) {
                         Chunk chunk = scene.getWorld().getChunk(chunkX + dx, chunkZ + dz);
@@ -170,7 +176,7 @@ public class InputHandler {
                         }
                     }
                 }
-                
+
                 glfwPostEmptyEvent();
             }
         }
@@ -196,35 +202,37 @@ public class InputHandler {
 
                 int chunkX = Math.floorDiv(adjacentPos.x, Chunk.WIDTH);
                 int chunkZ = Math.floorDiv(adjacentPos.z, Chunk.DEPTH);
-                
-                boolean isOnBorderX = adjacentPos.x % Chunk.WIDTH == 0 || adjacentPos.x % Chunk.WIDTH == Chunk.WIDTH - 1;
-                boolean isOnBorderZ = adjacentPos.z % Chunk.DEPTH == 0 || adjacentPos.z % Chunk.DEPTH == Chunk.DEPTH - 1;
-                
+
+                boolean isOnBorderX = adjacentPos.x % Chunk.WIDTH == 0
+                        || adjacentPos.x % Chunk.WIDTH == Chunk.WIDTH - 1;
+                boolean isOnBorderZ = adjacentPos.z % Chunk.DEPTH == 0
+                        || adjacentPos.z % Chunk.DEPTH == Chunk.DEPTH - 1;
+
                 List<Chunk> chunksToUpdate = new ArrayList<>();
-                
+
                 Chunk mainChunk = scene.getWorld().getChunk(chunkX, chunkZ);
                 if (mainChunk != null) {
                     chunksToUpdate.add(mainChunk);
                 }
-                
+
                 if (isOnBorderX || isOnBorderZ) {
                     int borderX = isOnBorderX ? (adjacentPos.x % Chunk.WIDTH == 0 ? -1 : 1) : 0;
                     int borderZ = isOnBorderZ ? (adjacentPos.z % Chunk.DEPTH == 0 ? -1 : 1) : 0;
-                    
+
                     if (isOnBorderX) {
                         Chunk adjacentX = scene.getWorld().getChunk(chunkX + borderX, chunkZ);
                         if (adjacentX != null) {
                             chunksToUpdate.add(adjacentX);
                         }
                     }
-                    
+
                     if (isOnBorderZ) {
                         Chunk adjacentZ = scene.getWorld().getChunk(chunkX, chunkZ + borderZ);
                         if (adjacentZ != null) {
                             chunksToUpdate.add(adjacentZ);
                         }
                     }
-                    
+
                     if (isOnBorderX && isOnBorderZ) {
                         Chunk diagonalChunk = scene.getWorld().getChunk(chunkX + borderX, chunkZ + borderZ);
                         if (diagonalChunk != null) {
@@ -232,11 +240,11 @@ public class InputHandler {
                         }
                     }
                 }
-                
+
                 for (Chunk chunk : chunksToUpdate) {
                     chunk.rebuildFullMesh(scene.getWorld(), scene);
                 }
-                
+
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dz = -1; dz <= 1; dz++) {
                         Chunk chunk = scene.getWorld().getChunk(chunkX + dx, chunkZ + dz);
@@ -245,7 +253,7 @@ public class InputHandler {
                         }
                     }
                 }
-                
+
                 glfwPostEmptyEvent();
             }
         }

@@ -34,7 +34,7 @@ public class Main implements IAppLogic {
         initUI(window);
         initInputHandler();
         
-        gameStateManager = new GameStateManager(window, scene, render);
+        gameStateManager = new GameStateManager(scene, render);
         
         logSystemInfo();
     }

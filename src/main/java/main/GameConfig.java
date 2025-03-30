@@ -5,7 +5,6 @@ import core.Window;
 
 
 public class GameConfig {
-    // Configurazione finestra
     private int windowWidth = 1280;
     private int windowHeight = 720;
     private int targetFps = 1000;
@@ -13,12 +12,10 @@ public class GameConfig {
     private boolean compatibleProfile = false;
     private String windowTitle = "Minecraft";
     
-    // Configurazione del mondo
     private float initialWorldX = 0f;
     private float initialWorldZ = 0f;
     private float initialPlayerY = 75f;
     
-    // Singleton pattern
     private static GameConfig instance;
     
     private GameConfig() {

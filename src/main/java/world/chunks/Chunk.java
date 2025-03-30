@@ -32,6 +32,7 @@ public class Chunk {
         WorldGenerator generator = new WorldGenerator();
         generator.generateBaseTerrain(this);
         generator.generateTrees(this);
+        this.setDirty(true);
     }
 
     public void buildMesh(World world, Scene scene) {
@@ -132,5 +133,28 @@ public class Chunk {
 
     public ChunkMesh getChunkMesh() {
         return chunkMesh;
+    }
+
+    public void setChunkEntity(Entity chunkEntity) {
+        this.chunkEntity = chunkEntity;
+    }
+
+    public void releaseResources() {
+        chunkEntity = null;
+        
+        if (chunkMesh != null) {
+            chunkMesh.cleanup();
+            chunkMesh = null;
+        }
+        
+        blocks = null;
+    }
+
+    public void cleanup() {
+        if (chunkMesh != null) {
+            chunkMesh.cleanup();
+            chunkMesh = null;
+        }
+        isDirty = false;
     }
 }

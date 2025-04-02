@@ -41,32 +41,67 @@ public class InputHandler {
         float move = diffTimeMillis * MOVEMENT_SPEED;
         Camera camera = scene.getCamera();
         Vector3f moveDir = new Vector3f();
+        Vector3f originalMoveDir = new Vector3f();
 
         if (window.isKeyPressed(GLFW_KEY_W))
-            moveDir.add(camera.getForward().mul(1));
+            originalMoveDir.add(camera.getForward().mul(1));
         if (window.isKeyPressed(GLFW_KEY_S))
-            moveDir.add(camera.getForward().mul(-1));
+            originalMoveDir.add(camera.getForward().mul(-1));
         if (window.isKeyPressed(GLFW_KEY_A))
-            moveDir.add(camera.getLeft().mul(1));
+            originalMoveDir.add(camera.getLeft().mul(1));
         if (window.isKeyPressed(GLFW_KEY_D))
-            moveDir.add(camera.getRight().mul(1));
+            originalMoveDir.add(camera.getRight().mul(1));
+
+        moveDir.set(originalMoveDir);
 
         if (moveDir.lengthSquared() > 0) {
             moveDir.normalize();
-        }
 
-        camera.move(moveDir, move);
+            if (scene.getPlayer().canMove(scene.getWorld(), camera.getPosition(), moveDir, move)) {
+                camera.move(moveDir, move);
+            } else {
+
+                boolean canMoveX = false;
+                boolean canMoveZ = false;
+
+                if (Math.abs(moveDir.x) > 0.01f) {
+                    Vector3f xDir = new Vector3f(moveDir.x, 0, 0).normalize();
+                    canMoveX = scene.getPlayer().canMove(scene.getWorld(), camera.getPosition(), xDir, move);
+                    if (canMoveX) {
+                        camera.move(xDir, move);
+                    }
+                }
+
+                if (Math.abs(moveDir.z) > 0.01f) {
+                    Vector3f zDir = new Vector3f(0, 0, moveDir.z).normalize();
+                    canMoveZ = scene.getPlayer().canMove(scene.getWorld(), camera.getPosition(), zDir, move);
+                    if (canMoveZ) {
+                        camera.move(zDir, move);
+                    }
+                }
+            }
+        }
 
         if (window.isKeyPressed(GLFW_KEY_LEFT_CONTROL) && moveDir.lengthSquared() > 0) {
-            camera.dash(moveDir, 0.04f);
+            if (scene.getPlayer().canMove(scene.getWorld(), camera.getPosition(), moveDir, 0.04f)) {
+                camera.dash(moveDir, 0.04f);
+            }
         }
 
-        if (window.isKeyPressed(GLFW_KEY_SPACE))
-            camera.moveUp(move);
-        if (window.isKeyPressed(GLFW_KEY_LEFT_SHIFT))
-            camera.moveDown(move);
-
         Vector3f position = camera.getPosition();
+
+        if (window.isKeyPressed(GLFW_KEY_SPACE)) {
+            if (scene.getPlayer().canMoveUp(scene.getWorld(), position, move)) {
+                camera.moveUp(move);
+            }
+        }
+
+        if (window.isKeyPressed(GLFW_KEY_LEFT_SHIFT)) {
+            Vector3f downDir = new Vector3f(0, -1, 0);
+            if (scene.getPlayer().canMove(scene.getWorld(), position, downDir, move)) {
+                camera.moveDown(move);
+            }
+        }
 
         scene.getPlayer().update(scene.getWorld(), position, diffTimeMillis);
 

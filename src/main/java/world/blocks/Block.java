@@ -18,7 +18,8 @@ public class Block {
         DIRT,
         STONE,
         WOOD,
-        LEAVES
+        LEAVES,
+        WATER,
     }
 
     public enum Face {
@@ -58,7 +59,7 @@ public class Block {
     }
 
     public boolean isSolid() {
-        return type != BlockType.AIR;
+        return type != BlockType.AIR && type != BlockType.WATER; 
     }
 
     public boolean isOpaque() {

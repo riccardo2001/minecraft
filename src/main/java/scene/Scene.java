@@ -114,6 +114,9 @@ public class Scene {
             case STONE:
                 textureKey = "stone";
                 break;
+            case WATER:
+                textureKey = "water";
+                break;
             case WOOD:
                 textureKey = "wood";
                 break;
@@ -325,7 +328,7 @@ public class Scene {
         }
 
         int maxChunksToProcess = Math.min(dirtyChunks.size(), 3);
-        
+
         for (int i = 0; i < maxChunksToProcess; i++) {
             Chunk chunk = dirtyChunks.get(i);
             if (chunk != null) {

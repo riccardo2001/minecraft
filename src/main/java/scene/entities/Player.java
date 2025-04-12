@@ -4,6 +4,7 @@ import org.joml.Vector3f;
 
 import world.World;
 import world.blocks.Block;
+import world.physics.Gravity;
 
 public class Player {
     private static final float WIDTH = 0.6f;
@@ -12,11 +13,24 @@ public class Player {
     private final Inventory inventory;
     private boolean isGrounded;
     private Vector3f spawnPosition; 
+    private boolean isInWater;
+    private Vector3f waterVelocity;
 
     public Player() {
         inventory = new Inventory();
         isGrounded = false;
         spawnPosition = new Vector3f(0, 70, 0); 
+        isInWater = false;
+        waterVelocity = new Vector3f(0, 0, 0);
+        
+        
+        inventory.addBlock(Block.BlockType.WATER);
+        inventory.addBlock(Block.BlockType.WATER);
+
+        inventory.addBlock(Block.BlockType.WATER);
+
+        inventory.addBlock(Block.BlockType.WATER);
+
     }
 
     public Inventory getInventory() {
@@ -26,6 +40,15 @@ public class Player {
     public void update(World world, Vector3f position, float deltaTime) {
         
         Delimiter playerBox = new Delimiter(position, WIDTH, HEIGHT);
+
+        
+        isInWater = Gravity.isPlayerInWater(world, position);
+        
+        if (isInWater) {
+            
+            Gravity.applyWaterPhysicsToPlayer(position, waterVelocity, world, deltaTime);
+            position.add(new Vector3f(waterVelocity).mul(deltaTime));
+        }
 
         checkGroundBeneath(world, position);
 
@@ -362,5 +385,17 @@ public class Player {
         }
         
         return true;
+    }
+
+    public boolean isInWater() {
+        return isInWater;
+    }
+    
+    public void setWaterVelocity(Vector3f velocity) {
+        this.waterVelocity.set(velocity);
+    }
+    
+    public Vector3f getWaterVelocity() {
+        return waterVelocity;
     }
 }

@@ -45,6 +45,9 @@ public class GameStateManager {
         float playerX = scene.getCamera().getPosition().x;
         float playerZ = scene.getCamera().getPosition().z;
         
+        // Aggiorna il mondo (fluidi, ecc)
+        scene.getWorld().update(diffTimeMillis);
+        
         scene.updateWorldGeneration(playerX, playerZ);
         render.updateBlockOutline(scene);
     }

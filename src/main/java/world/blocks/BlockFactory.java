@@ -39,4 +39,8 @@ public class BlockFactory {
     public Block createLeavesBlock() {
         return createBlock(Block.BlockType.LEAVES);
     }
+
+    public Block createWaterBlock() {
+        return createBlock(Block.BlockType.WATER);
+    }
 }

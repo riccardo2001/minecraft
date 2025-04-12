@@ -31,6 +31,7 @@ public class TextureCacheAtlas {
         positions.put("wood", new int[] { 1, 13 });
         positions.put("leaves", new int[] { 9, 12 });
         positions.put("bedrock", new int[] { 1, 1 });
+        positions.put("water", new int[] { 0, 2 });
         positions.put("default", new int[] { 0, 1 });
         return positions;
     }
@@ -41,6 +42,7 @@ public class TextureCacheAtlas {
                 case GRASS -> "grass_top";
                 case DIRT -> "dirt";
                 case STONE -> "stone";
+                case WATER -> "water";
                 case WOOD -> "wood";
                 case LEAVES -> "leaves";
                 default -> "default";

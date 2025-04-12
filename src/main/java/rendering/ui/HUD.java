@@ -67,7 +67,7 @@ public class HUD {
         quadMesh = new HUDmesh(positions, texCoords, indices);
     }
 
-    public void render(Inventory inventory, TextureCacheAtlas textureCache, Window window) {
+    public void render(Inventory inventory, TextureCacheAtlas textureCache, Window window, boolean isInWater) {
         glDisable(GL_DEPTH_TEST);
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -80,9 +80,20 @@ public class HUD {
 
         renderHotbar(inventory, textureCache, window);
 
+        // Mostra l'indicatore "in acqua" se necessario
+        if (isInWater) {
+            renderWaterOverlay(window);
+        }
+
         shaderProgram.unbind();
         glDisable(GL_BLEND);
         glEnable(GL_DEPTH_TEST);
+    }
+
+    private void renderWaterOverlay(Window window) {
+        // Overlay blu trasparente per indicare che il giocatore è in acqua
+        renderQuad(0, 0, window.getWidth(), window.getHeight(),
+                new Vector4f(0.0f, 0.3f, 0.8f, 0.2f));
     }
 
     private void renderHotbar(Inventory inventory, TextureCacheAtlas textureCache, Window window) {

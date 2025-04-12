@@ -54,6 +54,18 @@ public class InputHandler {
 
         moveDir.set(originalMoveDir);
 
+        // Gestione del movimento in acqua
+        if (scene.getPlayer().isInWater()) {
+            move *= 0.7f; // Movimento più lento in acqua
+            
+            // Gestione del nuoto verso l'alto
+            if (window.isKeyPressed(GLFW_KEY_SPACE)) {
+                Vector3f waterVelocity = scene.getPlayer().getWaterVelocity();
+                waterVelocity.y = 0.05f; // Forza di nuoto verso l'alto
+                scene.getPlayer().setWaterVelocity(waterVelocity);
+            }
+        } 
+        
         if (moveDir.lengthSquared() > 0) {
             moveDir.normalize();
 

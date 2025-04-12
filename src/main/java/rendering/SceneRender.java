@@ -134,7 +134,7 @@ public class SceneRender {
             renderCoordinates(scene, window);
         }
 
-        hud.render(scene.getPlayer().getInventory(), scene.getTextureCacheAtlas(), window);
+        hud.render(scene.getPlayer().getInventory(), scene.getTextureCacheAtlas(), window, false);
     }
 
     public void renderCoordinates(Scene scene, Window window) {
